@@ -29,7 +29,7 @@ final class NotchViewModel {
     var hoverToOpen = false
     /// 클립보드 검색창 등 텍스트 입력이 포커스를 가진 동안 true. 유휴 타이머가 멈춘다.
     var wantsKey = false {
-        didSet { if state == .expanded { wantsKey ? timers.cancel(.idle) : scheduleIdle() } }
+        didSet { guard oldValue != wantsKey, state == .expanded else { return }; wantsKey ? timers.cancel(.idle) : scheduleIdle() }
     }
     var onDrop: ((DropZone) -> Void)?
 

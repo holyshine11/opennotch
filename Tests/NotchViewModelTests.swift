@@ -157,4 +157,16 @@ final class FakeTimers: NotchTimers {
         vm.resetIdle()
         #expect(timers.scheduled[.idle] != nil)
     }
+
+    @Test func reassigningSameWantsKeyDoesNotTouchIdleTimer() {
+        let (vm, timers) = make()
+        vm.send(.clickNotch)
+        timers.scheduled[.idle] = nil          // 이미 예약된 타이머를 비워 두고
+        vm.wantsKey = false                    // 같은 값 재대입
+        #expect(timers.scheduled[.idle] == nil)   // 재예약되지 않아야 한다
+        vm.wantsKey = true
+        let cancelCountAfterFirstTrue = timers.cancelled.filter { $0 == .idle }.count
+        vm.wantsKey = true                     // 같은 값 재대입
+        #expect(timers.cancelled.filter { $0 == .idle }.count == cancelCountAfterFirstTrue)  // 재대입이 추가 cancel을 만들지 않는다
+    }
 }
