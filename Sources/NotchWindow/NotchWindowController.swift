@@ -25,6 +25,7 @@ final class MainThreadTimers: NotchTimers {
 final class NotchWindowController: NotchHost {
     let viewModel: NotchViewModel
     let toast = ToastCenter()
+    let badge = NotchBadge()
     private let notchPanel = NotchPanel()
     private let container = DropContainerView(frame: .zero)
     private(set) var notch = NotchRect(rect: .zero, isVirtual: true)
@@ -96,7 +97,7 @@ final class NotchWindowController: NotchHost {
     }
 
     private func rebuildContent() {
-        container.collapsedActiveRect = NotchGeometry.collapsedDropRect(notch: notch)
+        container.collapsedActiveRect = hideCollapsedShape ? .zero : NotchGeometry.collapsedDropRect(notch: notch)
         container.embed(NotchHostingView(rootView: makeRootView()))
         if notchPanel.contentView !== container { notchPanel.contentView = container }
     }
@@ -108,7 +109,7 @@ final class NotchWindowController: NotchHost {
 
     private func makeRootView() -> some View {
         let panes: (media: AnyView?, shelf: AnyView?, clipboard: AnyView?) = paneProvider?() ?? (nil, nil, nil)
-        return NotchRootView(viewModel: viewModel, toast: toast, notch: notch, hideCollapsedShape: hideCollapsedShape,
+        return NotchRootView(viewModel: viewModel, toast: toast, notch: notch, badge: badge, hideCollapsedShape: hideCollapsedShape,
                              mediaPane: panes.media, shelfPane: panes.shelf, clipboardPane: panes.clipboard)
             .environment(\.notchHost, self)
     }
@@ -126,5 +127,7 @@ final class NotchWindowController: NotchHost {
     func showToast(_ text: String, action: ToastAction?) { toast.show(text, action: action) }
 
     func collapse() { viewModel.send(.clickOutside) }
+
+    func setShelfBadge(_ count: Int) { badge.shelfCount = count }
 
 }

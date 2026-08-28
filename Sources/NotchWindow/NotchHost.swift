@@ -13,6 +13,7 @@ protocol NotchHost: AnyObject {
     func setWantsKey(_ wants: Bool)
     func showToast(_ text: String, action: ToastAction?)
     func collapse()
+    func setShelfBadge(_ count: Int)
     var panel: NSWindow { get }
 }
 

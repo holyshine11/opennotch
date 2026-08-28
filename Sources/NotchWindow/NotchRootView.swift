@@ -5,6 +5,7 @@ struct NotchRootView: View {
     let viewModel: NotchViewModel
     let toast: ToastCenter
     let notch: NotchRect          // 화면 좌표 — 여기서는 크기만 쓴다
+    let badge: NotchBadge
     /// 가상 노치 표시가 꺼졌을 때 접힌 검은 모양과 드래그 진입 밴드를 숨긴다(§3.1). 펼침에는 영향 없다.
     var hideCollapsedShape: Bool = false
     /// 모듈 뷰는 P2~P4에서 주입된다. nil이면 자리 표시.
@@ -13,6 +14,7 @@ struct NotchRootView: View {
     var clipboardPane: AnyView?
 
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.notchHost) private var host
 
     private var isOpen: Bool { viewModel.state != .collapsed }
     private var notchHeight: CGFloat { notch.rect.height }
@@ -32,15 +34,23 @@ struct NotchRootView: View {
             .frame(width: isOpen ? Constants.panelWidth : notch.rect.width,
                    height: isOpen ? notchHeight + Constants.panelBodyHeight : notchHeight)
             .contentShape(NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : Constants.collapsedCornerRadius))
+            .allowsHitTesting(showsCollapsedVisuals)
             .onTapGesture(coordinateSpace: .local) { location in
+                guard showsCollapsedVisuals else { return }
                 if !isOpen || location.y <= notchHeight { viewModel.send(.clickNotch) }
             }
-            .onHover { inside in viewModel.send(inside ? .hoverEnter : .hoverExit) }
+            .onHover { inside in
+                guard showsCollapsedVisuals else { return }
+                viewModel.send(inside ? .hoverEnter : .hoverExit)
+            }
             Spacer(minLength: 0)
         }
         .frame(width: Constants.panelWidth,
                height: notchHeight + Constants.panelBodyHeight + Constants.panelTopOverhang,
                alignment: .top)
+        .onChange(of: viewModel.state) { _, newState in
+            if newState == .collapsed { host?.setWantsKey(false) }
+        }
         .overlay(alignment: .top) {
             // 접힌 상태 드래그 진입 영역: 노치 좌우 32pt, 노치 높이만. alpha 0.001이라 WindowServer가 드래그를 우리 창에 전달한다.
             // 가상 노치가 꺼지면(hideCollapsedShape) 진입 밴드도 함께 숨긴다 — §3.1 "끄면 메뉴바 아이콘·단축키로만 연다".
@@ -64,6 +74,17 @@ struct NotchRootView: View {
         NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : Constants.collapsedCornerRadius)
             .fill(Color.black)
             .opacity(showsCollapsedVisuals ? 1 : 0)
+            .overlay(alignment: .trailing) {
+                // 접힌 상태 오른쪽 날개: 셸프 개수. 검은 불투명이라 alpha-0 규칙과 무관.
+                if !isOpen, badge.shelfCount > 0, showsCollapsedVisuals {
+                    Text("\(badge.shelfCount)")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: Constants.shelfWingWidth, height: notchHeight)
+                        .background(NotchShape(bottomRadius: Constants.collapsedCornerRadius).fill(Color.black))
+                        .offset(x: Constants.shelfWingWidth)
+                }
+            }
     }
 
     @ViewBuilder private var content: some View {
