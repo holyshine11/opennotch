@@ -24,3 +24,8 @@ enum PrefKey {
         ])
     }
 }
+
+extension Notification.Name {
+    /// 설정 창의 "Clear history" → 스토어가 비운다.
+    static let openNotchClearClipboard = Notification.Name("com.holyshine11.opennotch.clearClipboard")
+}

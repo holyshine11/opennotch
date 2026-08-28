@@ -99,6 +99,8 @@ struct NotchRootView: View {
             }
         }
         .foregroundStyle(.white)
+        .simultaneousGesture(TapGesture().onEnded { viewModel.resetIdle() })
+        .onContinuousHover { phase in if case .active = phase { viewModel.resetIdle() } }
     }
 
     private var panes: some View {
