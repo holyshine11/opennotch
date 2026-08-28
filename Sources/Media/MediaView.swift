@@ -6,6 +6,7 @@ import SwiftUI
 struct MediaView: View {
     let controller: MediaController
     @Environment(\.notchHost) private var host
+    @State private var dragFraction: Double?
 
     var body: some View {
         Group {
@@ -38,17 +39,37 @@ struct MediaView: View {
             artwork(np)
             VStack(alignment: .leading, spacing: 3) {
                 Text(np.title).font(.caption.bold()).lineLimit(1)
-                Text(np.artist ?? np.siteName).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(np.artist ?? np.siteName).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    if controller.sourceCount > 1, let name = controller.sourceName {
+                        Spacer(minLength: 2)
+                        Button { controller.cycleSource() } label: {
+                            Label(name, systemImage: "arrow.left.arrow.right").font(.caption2)
+                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .background(Color.white.opacity(0.12), in: Capsule())
+                        }
+                        .buttonStyle(.plain).help("Switch browser")
+                    }
+                }
                 HStack(spacing: 14) {
                     control("backward.fill") { controller.send(.prev) }
                     control(np.playing ? "pause.fill" : "play.fill") { controller.send(np.playing ? .pause : .play) }
                     control("forward.fill") { controller.send(.next) }
+                    Spacer()
+                    control("arrow.up.forward.app") { controller.revealCurrentTab() }
+                        .help("Show tab in browser")
                 }
                 .padding(.top, 2)
-                ProgressView(value: min(np.position, max(np.duration, 1)), total: max(np.duration, 1))
-                    .tint(.white)
+                seekBar(np)
             }
         }
+    }
+
+    private func seekBar(_ np: NowPlaying) -> some View {
+        SeekSlider(value: np.duration > 0 ? min(max(np.position / np.duration, 0), 1) : 0,
+                   onDrag: { host?.resetIdle() },
+                   onSeek: { controller.send(.seek($0)) })
+            .disabled(np.duration <= 0)
     }
 
     private func artwork(_ np: NowPlaying) -> some View {
@@ -74,7 +95,12 @@ struct MediaView: View {
             Text(title).font(.caption.bold()).lineLimit(2)
             if let hint {
                 Text("Controls need “Allow JavaScript from Apple Events”").font(.caption2).foregroundStyle(.secondary)
-                Button("Where is it?") { host?.showToast(hint, action: nil) }.buttonStyle(.link).font(.caption2)
+                HStack(spacing: 10) {
+                    // 브라우저를 앞으로 가져와 메뉴 막대가 그 브라우저 것이 되게 한 뒤 경로를 안내한다.
+                    Button("Where is it?") { controller.revealCurrentTab(); host?.showToast(hint, action: nil) }
+                    Button("Show tab") { controller.revealCurrentTab() }
+                }
+                .buttonStyle(.link).font(.caption2)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -88,6 +114,49 @@ struct MediaView: View {
             }
             .buttonStyle(.bordered)
         }
+    }
+}
+/// 진행 바. 비활성 패널에서 첫 클릭을 받고, NSSlider의 모달 추적 루프(마우스 업을 못 받으면 메인 스레드가 멈춤) 대신
+/// mouseDown/Dragged/Up 이벤트만 처리한다. 드래그 중에는 폴링 값으로 덮어쓰지 않는다.
+private struct SeekSlider: NSViewRepresentable {
+    var value: Double
+    var onDrag: () -> Void
+    var onSeek: (Double) -> Void
+
+    final class BarView: NSView {
+        var onDrag: () -> Void = {}
+        var onSeek: (Double) -> Void = { _ in }
+        var fraction: Double = 0 { didSet { needsDisplay = true } }
+        private(set) var dragging = false
+
+        override var intrinsicContentSize: NSSize { NSSize(width: NSView.noIntrinsicMetric, height: Constants.mediaSeekHitHeight) }
+        override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+        private func fraction(at event: NSEvent) -> Double {
+            let x = convert(event.locationInWindow, from: nil).x
+            return bounds.width > 0 ? min(max(x / bounds.width, 0), 1) : 0
+        }
+        override func mouseDown(with event: NSEvent) { dragging = true; fraction = fraction(at: event); onDrag() }
+        override func mouseDragged(with event: NSEvent) { fraction = fraction(at: event); onDrag() }
+        override func mouseUp(with event: NSEvent) { dragging = false; fraction = fraction(at: event); onSeek(fraction) }
+
+        override func draw(_ dirtyRect: NSRect) {
+            let h = Constants.mediaSeekBarHeight
+            let track = NSRect(x: 0, y: (bounds.height - h) / 2, width: bounds.width, height: h)
+            NSColor.white.withAlphaComponent(0.2).setFill()
+            NSBezierPath(roundedRect: track, xRadius: h / 2, yRadius: h / 2).fill()
+            var fill = track; fill.size.width = track.width * fraction
+            NSColor.white.setFill()
+            NSBezierPath(roundedRect: fill, xRadius: h / 2, yRadius: h / 2).fill()
+        }
+    }
+
+    func makeNSView(context: Context) -> BarView { BarView() }
+
+    func updateNSView(_ view: BarView, context: Context) {
+        view.onDrag = onDrag
+        view.onSeek = onSeek
+        if !view.dragging { view.fraction = value }
     }
 }
 #endif

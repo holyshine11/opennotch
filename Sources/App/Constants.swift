@@ -37,6 +37,8 @@ enum Constants {
     static let mediaArtworkMaxBytes: Int = 49_152
     static let mediaArtworkTargetPixels: Int = 96
     static let mediaArtworkSize: CGFloat = 44
+    static let mediaSeekBarHeight: CGFloat = 4
+    static let mediaSeekHitHeight: CGFloat = 14
     static let youtubeMusicHost: String = "music.youtube.com"
     static let youtubeWatchPath: String = "youtube.com/watch"
     static let automationPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"

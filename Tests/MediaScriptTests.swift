@@ -26,6 +26,19 @@ import Testing
         #expect(cmd.contains("execute tab 3 of window 2 javascript"))
         #expect(cmd.contains("const cmd = 'next'"))
         #expect(!cmd.contains("__CMD__"))
+        let seek = MediaScript.command(browser: .whale, window: 1, tab: 1, .seek(0.25))
+        #expect(seek.contains("const cmd = 'seek'") && seek.contains("const arg = 0.25"))
+        #expect(MediaScript.Command.seek(1.7).argument == 1)
+    }
+
+    @Test func probePrefersGivenTabAndActivateSelectsTab() {
+        let script = MediaScript.probe(browser: .chrome, prefer: (window: 2, tab: 5))
+        #expect(script.contains("set pw to 2") && script.contains("set pt to 5"))
+        #expect(script.contains("(wi = pw and ti = pt)"))
+        #expect(MediaScript.probe(browser: .chrome).contains("set pw to 0"))
+        let activate = MediaScript.activate(browser: .whale, window: 1, tab: 3)
+        #expect(activate.contains("set active tab index of window 1 to 3") && activate.contains("activate"))
+        #expect(MediaScript.activate(browser: .safari, window: 1, tab: 3).contains("set current tab of window 1 to tab 3"))
     }
 
     @Test func parseProbeLine() {

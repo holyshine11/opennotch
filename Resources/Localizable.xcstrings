@@ -1,12 +1,12 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%@ › View › Developer › Allow JavaScript from Apple Events": {
+    "%@ menu bar › View › Developer › Allow JavaScript from Apple Events (only once)": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ › 보기 › 개발자 › Apple Events의 자바스크립트 허용"
+            "value": "%@ 메뉴 막대 › 보기 › 개발자 › Apple Events의 자바스크립트 허용 (한 번만 켜면 됩니다)"
           }
         }
       }
@@ -541,12 +541,42 @@
         }
       }
     },
+    "Show tab": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "탭으로 이동"
+          }
+        }
+      }
+    },
+    "Show tab in browser": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "브라우저에서 탭 보기"
+          }
+        }
+      }
+    },
     "Show virtual notch on screens without a notch": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
             "value": "노치가 없는 화면에 가상 노치 표시"
+          }
+        }
+      }
+    },
+    "Switch browser": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "브라우저 전환"
           }
         }
       }
@@ -571,12 +601,22 @@
         }
       }
     },
+    "Whale menu bar › View › Developer info › Allow JavaScript from Apple Events (only once)": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Whale 메뉴 막대 › 보기 › 개발자 정보 › Apple Events의 자바스크립트 허용 (한 번만 켜면 됩니다)"
+          }
+        }
+      }
+    },
     "Where is it?": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "어디서 켜나요?"
+            "value": "어디서 켜나요? (브라우저로 이동)"
           }
         }
       }

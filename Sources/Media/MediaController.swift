@@ -73,6 +73,12 @@ final class MediaController {
     }
     var enabledBrowsers: Set<BrowserKind> = []
     private(set) var state: MediaState = .off
+    /// 현재 표시 중인 브라우저 이름과, YouTube 탭을 가진 브라우저 수(2 이상이면 전환 버튼 표시).
+    private(set) var sourceName: String?
+    private(set) var sourceCount: Int = 0
+    private var candidates: [(BrowserKind, MediaScript.ProbeResult)] = []
+    /// 사용자가 전환 버튼으로 고른 브라우저. 그 브라우저에 탭이 있는 한 재생 여부와 무관하게 유지.
+    private var pinned: BrowserKind?
 
     private var panelOpen = false
     private var timer: Timer?
@@ -97,8 +103,12 @@ final class MediaController {
 
     func send(_ cmd: MediaScript.Command) {
         guard let current else { return }
-        if case .nowPlaying(var np) = state, cmd == .play || cmd == .pause {
-            np.playing = cmd == .play
+        if case .nowPlaying(var np) = state {
+            switch cmd {
+            case .play, .pause: np.playing = cmd == .play
+            case .seek(let f): np.position = f * np.duration
+            default: break
+            }
             state = .nowPlaying(np)
         }
         Task {
@@ -111,20 +121,29 @@ final class MediaController {
         }
     }
 
+    /// 브라우저를 앞으로 가져오고 현재 탭을 활성화한다(JS 토글 없이도 동작).
+    func revealCurrentTab() {
+        guard let current else { return }
+        Task { _ = await AppleScriptRunner.run(MediaScript.activate(browser: current.browser, window: current.window, tab: current.tab), timeout: Constants.mediaScriptTimeout) }
+    }
+
     func poll() {
         guard isEnabled, !inFlight, Date() >= backoffUntil else { return }
-        let browsers = enabledBrowsers.filter(\.isRunning).sorted { $0.rawValue < $1.rawValue }
+        // 마지막으로 제어한 브라우저를 먼저 훑는다 — 아무것도 재생 중이 아닐 때 그 탭이 유지된다.
+        let browsers = enabledBrowsers.filter(\.isRunning).sorted {
+            ($0 == current?.browser ? 0 : 1, $0.rawValue) < ($1 == current?.browser ? 0 : 1, $1.rawValue)
+        }
         guard !browsers.isEmpty else { apply(nil); return }
         inFlight = true
         Task {
             defer { inFlight = false }
-            var best: (BrowserKind, MediaScript.ProbeResult)?
+            var found: [(BrowserKind, MediaScript.ProbeResult)] = []
             var denied: BrowserKind?
             for browser in browsers {
-                switch await AppleScriptRunner.run(MediaScript.probe(browser: browser), timeout: Constants.mediaScriptTimeout) {
+                let prefer = current.flatMap { $0.browser == browser ? (window: $0.window, tab: $0.tab) : nil }
+                switch await AppleScriptRunner.run(MediaScript.probe(browser: browser, prefer: prefer), timeout: Constants.mediaScriptTimeout) {
                 case .success(let out):
-                    guard let probe = MediaScript.parseProbe(out) else { continue }
-                    if best == nil || probe.json.contains("\"playing\":true") { best = (browser, probe) }
+                    if let probe = MediaScript.parseProbe(out) { found.append((browser, probe)) }
                 case .failure(let f):
                     switch f.code {
                     case AppleScriptFailure.permissionDenied: denied = browser
@@ -134,8 +153,11 @@ final class MediaController {
                         backoffUntil = Date().addingTimeInterval(Constants.mediaErrorBackoff)
                     }
                 }
-                if best != nil, probeIsPlaying(best) { break }
             }
+            candidates = found
+            // 재생 중인 것 우선(현재 브라우저가 앞에 정렬돼 있어 sticky), 없으면 현재 브라우저, 없으면 첫 번째.
+            let best = found.first { $0.0 == pinned } ?? found.first { probeIsPlaying($0) }
+                ?? found.first { $0.0 == current?.browser } ?? found.first
             if best == nil, let denied { state = .permissionDenied(denied); current = nil; return }
             apply(best)
         }
@@ -143,14 +165,25 @@ final class MediaController {
 
     // MARK: 내부
 
-    private func probeIsPlaying(_ best: (BrowserKind, MediaScript.ProbeResult)?) -> Bool {
-        best?.1.json.contains("\"playing\":true") ?? false
+    private func probeIsPlaying(_ entry: (BrowserKind, MediaScript.ProbeResult)) -> Bool {
+        entry.1.json.contains("\"playing\":true")
+    }
+
+    /// 여러 브라우저에 YouTube 탭이 있을 때 다음 브라우저로 표시를 바꾼다.
+    func cycleSource() {
+        guard candidates.count > 1 else { return }
+        let i = candidates.firstIndex { $0.0 == current?.browser } ?? -1
+        let next = candidates[(i + 1) % candidates.count]
+        pinned = next.0
+        apply(next)
     }
 
     private func apply(_ best: (BrowserKind, MediaScript.ProbeResult)?) {
-        guard let best else { state = .idle; current = nil; return }
+        guard let best else { state = .idle; current = nil; sourceName = nil; sourceCount = 0; return }
         let (browser, probe) = best
         current = (browser, probe.window, probe.tab)
+        sourceName = browser.displayName
+        sourceCount = candidates.count
         let title = MediaScript.cleanTitle(probe.title)
         if probe.jsErrorCode != nil {
             state = .readOnly(title: title, hint: browser.jsToggleHint)

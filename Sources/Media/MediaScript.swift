@@ -2,7 +2,18 @@ import Foundation
 
 /// AppleScript·JS 문자열만 만들고 결과를 파싱한다. 실행은 하지 않는다(테스트 대상).
 enum MediaScript {
-    enum Command: String, Sendable { case play, pause, next, prev }
+    enum Command: Equatable, Sendable {
+        case play, pause, next, prev
+        /// 0...1 비율 위치로 이동.
+        case seek(Double)
+
+        var name: String {
+            switch self {
+            case .play: "play"; case .pause: "pause"; case .next: "next"; case .prev: "prev"; case .seek: "seek"
+            }
+        }
+        var argument: Double { if case .seek(let f) = self { return min(max(f, 0), 1) }; return 0 }
+    }
 
     /// probe 스크립트 출력 한 줄: `FOUND \t 창 \t 탭 \t URL \t 제목 \t JS오류코드 \t JSON` 또는 `NONE`.
     /// 크로미움 계열의 JS-비활성 오류 코드는 12(2026-08-28 Whale 4.39에서 채집). 어떤 코드든 JS 실패면 읽기 전용으로 처리한다.
@@ -61,7 +72,9 @@ enum MediaScript {
       const v = document.querySelector('video');
       const q = s => document.querySelector(s);
       const cmd = '__CMD__';
-      if (cmd === 'play' && v) v.play();
+      const arg = __ARG__;
+      if (cmd === 'seek' && v && isFinite(v.duration)) v.currentTime = arg * v.duration;
+      else if (cmd === 'play' && v) v.play();
       else if (cmd === 'pause' && v) v.pause();
       else if (cmd === 'next') (q('.ytp-next-button') || q('ytmusic-player-bar .next-button'))?.click();
       else if (cmd === 'prev') (q('.ytp-prev-button') || q('ytmusic-player-bar .previous-button'))?.click();
@@ -77,14 +90,17 @@ enum MediaScript {
 
     // MARK: AppleScript
 
-    /// 브라우저의 모든 탭을 훑어 첫 YouTube 탭을 찾고(재생 중인 탭 우선) JS probe를 실행한다. JS 실패는 코드로 실어 보낸다.
-    static func probe(browser: BrowserKind) -> String {
+    /// 브라우저의 모든 탭을 훑어 YouTube 탭을 찾고 JS probe를 실행한다. 우선순위: 재생 중 > `prefer`(마지막으로 제어한 탭) > 첫 탭.
+    /// JS 실패는 오류 코드로 실어 보낸다.
+    static func probe(browser: BrowserKind, prefer: (window: Int, tab: Int)? = nil) -> String {
         let js = escape(probeJSOneLine)
         let run = browser.isSafari ? "do JavaScript \"\(js)\" in t" : "execute t javascript \"\(js)\""
         let titleProp = browser.isSafari ? "name" : "title"
         // `tab`은 tell 블록 안에서 브라우저의 tab 클래스로 해석되므로 구분자는 밖에서 묶는다.
         return """
         set sep to ASCII character 9
+        set pw to \(prefer?.window ?? 0)
+        set pt to \(prefer?.tab ?? 0)
         tell application id "\(browser.rawValue)"
             set best to ""
             repeat with wi from 1 to count of windows
@@ -102,7 +118,7 @@ enum MediaScript {
                             end try
                             set found to "FOUND" & sep & wi & sep & ti & sep & u & sep & (\(titleProp) of t) & sep & errNum & sep & jsOut
                             if jsOut contains "\\"playing\\":true" then return found
-                            if best is "" then set best to found
+                            if best is "" or (wi = pw and ti = pt) then set best to found
                         end if
                     end repeat
                 end try
@@ -114,12 +130,27 @@ enum MediaScript {
     }
 
     static func command(browser: BrowserKind, window: Int, tab: Int, _ cmd: Command) -> String {
-        let js = escape(oneLine(commandJS).replacingOccurrences(of: "__CMD__", with: cmd.rawValue))
+        let js = escape(oneLine(commandJS).replacingOccurrences(of: "__CMD__", with: cmd.name)
+            .replacingOccurrences(of: "__ARG__", with: String(cmd.argument)))
         let target = "tab \(tab) of window \(window)"
         let run = browser.isSafari ? "do JavaScript \"\(js)\" in \(target)" : "execute \(target) javascript \"\(js)\""
         return """
         tell application id "\(browser.rawValue)"
             \(run)
+        end tell
+        """
+    }
+
+    /// 브라우저를 앞으로 가져오고 해당 탭을 활성화한다(JS 불필요).
+    static func activate(browser: BrowserKind, window: Int, tab: Int) -> String {
+        let select = browser.isSafari
+            ? "set current tab of window \(window) to tab \(tab) of window \(window)"
+            : "set active tab index of window \(window) to \(tab)"
+        return """
+        tell application id "\(browser.rawValue)"
+            \(select)
+            set index of window \(window) to 1
+            activate
         end tell
         """
     }

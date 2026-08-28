@@ -25,10 +25,15 @@ enum BrowserKind: String, CaseIterable, Sendable {
     var isRunning: Bool { !NSRunningApplication.runningApplications(withBundleIdentifier: rawValue).isEmpty }
     var isInstalled: Bool { NSWorkspace.shared.urlForApplication(withBundleIdentifier: rawValue) != nil }
 
-    /// "Apple Events의 JavaScript 허용" 토글 위치 안내. 크로미움 계열은 모두 같은 메뉴 경로.
+    /// "Apple Events의 JavaScript 허용" 토글 위치 안내. 크로미움 계열은 보기 › 개발자 아래에 있고, Whale만 하위 메뉴 이름이 다르다.
     var jsToggleHint: String {
-        isSafari
-            ? String(localized: "Safari › Settings › Advanced › Show features for web developers, then Develop › Allow JavaScript from Apple Events")
-            : String(localized: "\(displayName) › View › Developer › Allow JavaScript from Apple Events")
+        switch self {
+        case .safari:
+            String(localized: "Safari › Settings › Advanced › Show features for web developers, then Develop › Allow JavaScript from Apple Events")
+        case .whale:
+            String(localized: "Whale menu bar › View › Developer info › Allow JavaScript from Apple Events (only once)")
+        default:
+            String(localized: "\(displayName) menu bar › View › Developer › Allow JavaScript from Apple Events (only once)")
+        }
     }
 }
