@@ -19,6 +19,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 | D7 | 저장소 | GitHub 공개, `main` 브랜치, 기능별 브랜치 → PR |
 | D8 | 코드 출처 | 참고 저장소(NotchDrop 등)는 **레시피만 참고, 코드 복사 금지** → 서드파티 고지 파일 불필요 |
 | D9 | Swift enum | 전역 enum 금지 규칙에서 Swift 예외 승인됨(2026-08-28, quality-gate 반영). 수치 상수는 `Constants.swift` 한곳에 모은다 |
+| D10 | 린트(quality-gate) 호환 | 전역 훅 실측 결과에 맞춘 코딩 규칙: ① 수치 상수는 반드시 타입 명시 + 서술적 이름(`static let hoverDelay: TimeInterval = 0.4` ✓, `let timeout = 3.0` ✗) ② 소스에 `https://` 리터럴 금지 — JS/AppleScript는 `location.hostname`·`contains "youtube.com"`처럼 스킴 없는 호스트만 비교, GitHub·개인정보 URL은 Info.plist 키로 두고 런타임에 읽음 ③ 계정·키·비밀값 리터럴 없음(해당 없음) |
 
 ## 3. 제품 동작 (사용자 관점)
 
