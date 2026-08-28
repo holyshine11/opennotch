@@ -30,5 +30,15 @@ enum Constants {
     static let clipboardListHeight: CGFloat = 114
     static let clipboardRowHeight: CGFloat = 44
     static let clipboardTitleMaxLength: Int = 60
+    static let mediaPollInterval: TimeInterval = 2
+    static let mediaScriptTimeout: TimeInterval = 3
+    static let mediaErrorBackoff: TimeInterval = 30
+    static let mediaCommandRefreshDelay: TimeInterval = 0.5
+    static let mediaArtworkMaxBytes: Int = 49_152
+    static let mediaArtworkTargetPixels: Int = 96
+    static let mediaArtworkSize: CGFloat = 44
+    static let youtubeMusicHost: String = "music.youtube.com"
+    static let youtubeWatchPath: String = "youtube.com/watch"
+    static let automationPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
     static let pasteboardPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Pasteboard"
 }

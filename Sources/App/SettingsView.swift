@@ -21,6 +21,8 @@ struct GeneralSettingsView: View {
     @AppStorage(PrefKey.showVirtualNotch) private var showVirtualNotch = true
     @AppStorage(PrefKey.clipboardEnabled) private var clipboardEnabled = true
     @AppStorage(PrefKey.clipboardLimit) private var clipboardLimit = Constants.clipboardDefaultLimit
+    @AppStorage(PrefKey.mediaEnabled) private var mediaEnabled = false
+    @AppStorage(PrefKey.enabledBrowsers) private var enabledBrowsers = ""
     @State private var confirmHideIcon = false
     @State private var launchError: String?
     @State private var isRevertingLaunchToggle = false
@@ -55,6 +57,16 @@ struct GeneralSettingsView: View {
                         in: Constants.clipboardLimitRange, step: Constants.clipboardLimitStep)
                 Button("Clear history") { NotificationCenter.default.post(name: .openNotchClearClipboard, object: nil) }
             }
+            #if MEDIA_ENABLED
+            Section("YouTube") {
+                Toggle("Control YouTube in your browser", isOn: $mediaEnabled)
+                ForEach(BrowserKind.allCases.filter(\.isInstalled), id: \.rawValue) { browser in
+                    Toggle(browser.displayName, isOn: browserBinding(browser)).disabled(!mediaEnabled)
+                }
+                Text("Controls need “Allow JavaScript from Apple Events” in the browser’s View › Developer menu. Without it only the tab title is shown.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            #endif
         }
         .formStyle(.grouped)
         .confirmationDialog("Hide the menu bar icon?", isPresented: $confirmHideIcon) {
@@ -73,6 +85,19 @@ struct GeneralSettingsView: View {
                 launchAtLogin = systemValue
             }
         }
+    }
+}
+
+extension GeneralSettingsView {
+    /// `enabledBrowsers`(쉼표 구분 번들 ID) 안의 한 브라우저를 토글하는 바인딩.
+    fileprivate func browserBinding(_ browser: BrowserKind) -> Binding<Bool> {
+        Binding(
+            get: { enabledBrowsers.split(separator: ",").contains(Substring(browser.rawValue)) },
+            set: { on in
+                var ids = Set(enabledBrowsers.split(separator: ",").map(String.init))
+                if on { ids.insert(browser.rawValue) } else { ids.remove(browser.rawValue) }
+                enabledBrowsers = ids.sorted().joined(separator: ",")
+            })
     }
 }
 

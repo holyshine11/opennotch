@@ -40,6 +40,7 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "© 2026 holyshine11. MIT License."
         ITSAppUsesNonExemptEncryption: false
+        NSAppleEventsUsageDescription: "OpenNotch reads the title and playback state of your open YouTube tabs and sends play/pause/next/previous to the browser."
         ONGitHubURL: "https://github.com/holyshine11/OpenNotch"
         ONPrivacyURL: "https://holyshine11.github.io/OpenNotch/privacy"
     settings:

@@ -28,6 +28,8 @@
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>OpenNotch reads the title and playback state of your open YouTube tabs and sends play/pause/next/previous to the browser.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 holyshine11. MIT License.</string>
 	<key>ONGitHubURL</key>

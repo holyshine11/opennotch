@@ -13,6 +13,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var shelfStore: ShelfStore?
     private var clipboardStore: ClipboardStore?
     private var clipboardMonitor: ClipboardMonitor?
+    #if MEDIA_ENABLED
+    private var mediaController: MediaController?
+    #endif
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PrefKey.registerDefaults()
@@ -28,8 +31,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         clipboardStore = clipboard
         clipboardMonitor = monitor
         monitor.start()
+        #if MEDIA_ENABLED
+        let media = MediaController()
+        mediaController = media
+        let mediaPane: AnyView? = AnyView(MediaView(controller: media))
+        #else
+        let mediaPane: AnyView? = nil
+        #endif
         applyPreferences(to: controller)
-        controller.paneProvider = { (media: nil, shelf: AnyView(ShelfView(store: shelf)), clipboard: AnyView(ClipboardView(store: clipboard, monitor: monitor))) }
+        controller.paneProvider = { (media: mediaPane, shelf: AnyView(ShelfView(store: shelf)), clipboard: AnyView(ClipboardView(store: clipboard, monitor: monitor))) }
         observers.append(NotificationCenter.default.addObserver(forName: .openNotchClearClipboard, object: nil, queue: .main) { [weak clipboard] _ in
             MainActor.assumeIsolated { clipboard?.removeAll() }
         })
@@ -102,5 +112,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let limit = defaults.integer(forKey: PrefKey.clipboardLimit)
             if limit > 0, clipboardStore.limit != limit { clipboardStore.limit = limit }
         }
+        #if MEDIA_ENABLED
+        if let mediaController {
+            let ids = (defaults.string(forKey: PrefKey.enabledBrowsers) ?? "").split(separator: ",")
+            let browsers = Set(ids.compactMap { BrowserKind(rawValue: String($0)) })
+            if mediaController.enabledBrowsers != browsers { mediaController.enabledBrowsers = browsers }
+            let enabled = defaults.bool(forKey: PrefKey.mediaEnabled)
+            if mediaController.isEnabled != enabled { mediaController.isEnabled = enabled }
+        }
+        #endif
     }
 }

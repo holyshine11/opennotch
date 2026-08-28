@@ -1,4 +1,4 @@
-# OpenNotch 설계 스펙 (v1.3)
+# OpenNotch 설계 스펙 (v1.4)
 
 작성 2026-08-28 · 상태: 승인됨(v1.1) → v1.2는 P1 최종 리뷰 반영(드롭 거절 이벤트·reopen·클립보드 확장·가상 노치 숨김) · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md` · v1.3: P2 구현에 맞춰 §4.3·§4.6 갱신(셸프 access 유지 모델, 서비스 시그니처)
 
@@ -157,20 +157,21 @@ init(clock: any Clock<Duration> = ContinuousClock())
 - 복사(칩 클릭): `clearContents()` → 원래 타입으로 쓰기 + 마커 타입.
 - 화면 잠금(`com.apple.screenIsLocked` / `screenIsUnlocked` 분산 알림)에 타이머 정지/재개.
 
-### 4.8 미디어 (Apple Events) — 전체가 `#if MEDIA_ENABLED`
-- Entitlements(`OpenNotch.entitlements`): `com.apple.security.automation.apple-events = true`, `com.apple.security.temporary-exception.apple-events = [com.apple.Safari, com.google.Chrome, com.microsoft.edgemac, company.thebrowser.Browser, com.brave.Browser]`. `BrowserKind`의 번들 ID 집합은 이 5개와 정확히 같고 `EntitlementsTests`가 plist를 읽어 일치를 검증한다. `NSAppleEventsUsageDescription`(ko/en): "열어 둔 YouTube 탭의 재생 정보를 읽고 재생/일시정지를 실행하기 위해 브라우저에 접근합니다."
+### 4.8 미디어 (Apple Events) — 실행부는 `#if MEDIA_ENABLED`
+- `BrowserKind`·`MediaScript`(순수 데이터·문자열)는 게이트 밖에 두어 테스트 타깃(조건 없음)에서도 컴파일된다. `MediaController`(NSAppleScript 실행)·`MediaView`·AppDelegate 배선만 게이트 안.
+- Entitlements(`OpenNotch.entitlements`): `com.apple.security.automation.apple-events = true`, `com.apple.security.temporary-exception.apple-events = [com.apple.Safari, com.google.Chrome, com.microsoft.edgemac, company.thebrowser.Browser, com.brave.Browser, com.naver.Whale]`. `BrowserKind`의 번들 ID 집합은 이 6개와 정확히 같고 `EntitlementsTests`가 plist를 읽어 일치를 검증한다. `NSAppleEventsUsageDescription`(ko/en): "열어 둔 YouTube 탭의 재생 정보를 읽고 재생/일시정지를 실행하기 위해 브라우저에 접근합니다."
 - 기본 `mediaEnabled = false`. 패널의 [YouTube 제어 사용하기] 또는 설정 토글로 켤 때 현재 실행 중인 지원 브라우저를 `enabledBrowsers`에 넣고 폴링 시작 → 자동화 프롬프트는 그때 브라우저별 1회. 설정 미디어 탭에서 브라우저별 켜고 끌 수 있다.
 - 폴링: **패널 펼침 중 2초, 접힘 0**. `mediaEnabled == false`면 Apple Event 0회. 실행 중이고 켜진 브라우저에만 전송. 브라우저를 실행시키지 않는다.
-- 한 번의 폴링 = 브라우저당 AppleScript 1회(탭 URL·제목 열거 — JS 토글 불필요) + YouTube 탭이 있으면 JS 1회. `NSAppleScript`는 백그라운드 큐에서 실행, 타임아웃 3초, 결과를 `@MainActor`로 전달.
+- 한 번의 폴링 = 브라우저당 AppleScript 1회. 스크립트 하나가 탭을 열거하고 YouTube 탭(`music.youtube.com` 또는 `youtube.com/watch`)에서 JS probe까지 실행해 `FOUND\t창\t탭\tURL\t제목\tJS오류코드\tJSON` 한 줄(또는 `NONE`)을 돌려준다. 재생 중인 탭을 우선하고 없으면 첫 탭. 주의: tell 블록 안에서 `tab`은 브라우저의 tab 클래스로 해석되므로 구분자는 블록 밖에서 `ASCII character 9`로 묶는다. `NSAppleScript`는 백그라운드 큐에서 실행, 타임아웃 3초, 결과를 `@MainActor`로 전달.
 - `MediaScript`: JS 페이로드는 Swift raw string(`#"""…"""#`)으로 파일 안에 보관. AppleScript에 삽입 전 `\` → `\\`, `"` → `\"` 이스케이프 후 한 줄로 결합. `probe(browser:)`, `listTabs(browser:)`, `command(browser:, tabIndex:, cmd:)`는 문자열만 만든다(테스트 대상).
-- probe JS 반환 JSON 스키마(`NowPlaying`): `{ "title": String, "artist": String?, "artwork": String? (data:image/…;base64, 페이지 컨텍스트에서 fetch → ≤48KB, 96px 후보 선택, 실패 시 null), "playing": Bool, "position": Double(초), "duration": Double(초), "site": "youtube" | "youtube_music" }`. 앱은 네트워크를 쓰지 않는다.
+- probe JS 반환 JSON 스키마(`NowPlaying`): `{ "title": String, "artist": String?, "artwork": String? (data:image/…;base64. `execute javascript`는 동기라 fetch를 기다릴 수 없으므로 페이지 컨텍스트에서 비동기로 받아 `window.__onArt`에 캐시하고 **다음 폴링**에 실린다. ≤48KB, 96px 이상 최소 후보, 실패 시 null), "playing": Bool, "position": Double(초), "duration": Double(초), "site": "youtube" | "youtube_music" }`. 앱은 네트워크를 쓰지 않는다.
 - command JS: `play|pause|next|prev` — `<video>` 제어, next/prev는 사이트별 DOM 버튼(`.ytp-next-button`/`.ytp-prev-button`, `ytmusic-player-bar .next-button/.previous-button`) 클릭.
-- `MediaError.classify(code:message:) -> MediaState`: `-1743` → `.permissionDenied(browser)`(버튼: 시스템 설정 > 개인정보 보호 > 자동화); JS 비활성 → `.jsDisabled(browser)`(브라우저별 안내: Chrome/Edge/Arc/Brave = 보기 > 개발자 > Apple Events의 JavaScript 허용, Safari = 설정 > 고급 > 웹 개발자용 기능 표시 → 개발자 > Apple Events의 JavaScript 허용); `-600` → `.idle`; 그 외 → 로그 + 30초 백오프. **JS 비활성의 실제 오류 코드·문자열은 P4 착수 시 Safari/Chrome에서 채집해 상수로 기재**하고 테스트한다.
+- `MediaError.classify(code:message:) -> MediaState`: `-1743` → `.permissionDenied(browser)`(버튼: 시스템 설정 > 개인정보 보호 > 자동화); JS 비활성 → `.jsDisabled(browser)`(브라우저별 안내: Chrome/Edge/Arc/Brave = 보기 > 개발자 > Apple Events의 JavaScript 허용, Safari = 설정 > 고급 > 웹 개발자용 기능 표시 → 개발자 > Apple Events의 JavaScript 허용); `-600` → `.idle`; 그 외 → 로그 + 30초 백오프. JS 비활성 오류 코드는 크로미움 계열 **12**(2026-08-28 Whale 4.39에서 채집, 메시지 "AppleScript를 통한 자바스크립트 실행 기능이 꺼져 있습니다…"). 구현은 코드와 무관하게 JS 실패면 모두 읽기 전용으로 처리하고 브라우저별 토글 위치를 안내한다. 탭 URL·제목 열거는 이 토글 없이도 된다(자동화 권한만 필요).
 - 읽기 전용 모드: JS 실패 시 탭 제목(`"제목 - YouTube"`, `"제목 - YouTube Music"`)만 표시, 컨트롤 비활성.
 - 사이트 배지는 텍스트("YouTube Music")만. YouTube 로고 에셋을 번들에 넣지 않는다.
 
 ### 4.9 설정 키 (`Preferences.swift`, `@AppStorage`)
-`hoverToOpen`(false) · `launchAtLogin`(false, `SMAppService.status`와 동기화) · `showMenuBarIcon`(true) · `hotkeyEnabled`(true) · `showVirtualNotch`(true) · `clipboardEnabled`(true) · `clipboardLimit`(100) · `firstLaunchDone`(false) · [MEDIA] `mediaEnabled`(false) · `enabledBrowsers`([])
+`hoverToOpen`(false) · `launchAtLogin`(false, `SMAppService.status`와 동기화) · `showMenuBarIcon`(true) · `hotkeyEnabled`(true) · `showVirtualNotch`(true) · `clipboardEnabled`(true) · `clipboardLimit`(100) · `firstLaunchDone`(false) · [MEDIA] `mediaEnabled`(false) · `enabledBrowsers`("" — 번들 ID를 쉼표로 이은 문자열, `@AppStorage` 호환)
 수치 상수(`Constants.swift`): 호버 지연 0.4s, 호버 이탈 0.3s, 유휴 6s, 드래그 진입 여유 32pt, 가상 노치 폭 180pt, 패널 560×190, 셸프 상한 12, 폴링 2s, 스크립트 타임아웃 3s, 이미지 상한 10MB, 아트워크 상한 48KB.
 
 ### 4.10 App Store 패키징
