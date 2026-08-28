@@ -57,4 +57,13 @@ import Testing
         #expect(d.maxX == 856 + Constants.dragEnterMargin)
         #expect(d.height == 32)
     }
+
+    /// 스펙 §4.9 수치. 상수가 바뀌면 여기서 잡힌다.
+    @Test func specConstantsMatchDesign() {
+        #expect(Constants.panelWidth == 560)
+        #expect(Constants.panelBodyHeight == 190)
+        #expect(Constants.panelTopOverhang == 1)
+        #expect(Constants.virtualNotchWidth == 180)
+        #expect(Constants.dragEnterMargin == 32)
+    }
 }
