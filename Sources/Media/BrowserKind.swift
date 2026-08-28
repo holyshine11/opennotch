@@ -29,7 +29,7 @@ enum BrowserKind: String, CaseIterable, Sendable {
     var jsToggleHint: String {
         switch self {
         case .safari:
-            String(localized: "Safari › Settings › Advanced › Show features for web developers, then Develop › Allow JavaScript from Apple Events")
+            String(localized: "Safari › Settings › Developer › Allow JavaScript from Apple Events (turn on Settings › Advanced › Show features for web developers first; only once)")
         case .whale:
             String(localized: "Whale menu bar › View › Developer info › Allow JavaScript from Apple Events (only once)")
         default:

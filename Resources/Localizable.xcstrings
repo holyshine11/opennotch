@@ -191,6 +191,16 @@
         }
       }
     },
+    "Done": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "확인"
+          }
+        }
+      }
+    },
     "Drop files here": {
       "localizations": {
         "ko": {
@@ -471,12 +481,12 @@
         }
       }
     },
-    "Safari › Settings › Advanced › Show features for web developers, then Develop › Allow JavaScript from Apple Events": {
+    "Safari › Settings › Developer › Allow JavaScript from Apple Events (turn on Settings › Advanced › Show features for web developers first; only once)": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Safari › 설정 › 고급 › 웹 개발자용 기능 표시를 켠 뒤, 개발자용 › Apple Events의 JavaScript 허용"
+            "value": "Safari › 설정 › 개발자 › Apple Events의 JavaScript 허용 (먼저 설정 › 고급 › 웹 개발자용 기능 표시를 켜세요. 한 번만 하면 됩니다)"
           }
         }
       }
@@ -616,7 +626,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "어디서 켜나요? (브라우저로 이동)"
+            "value": "어디서 켜나요?"
           }
         }
       }

@@ -11,8 +11,8 @@ enum PrefKey {
     static let clipboardLimit = "clipboardLimit"
     static let firstLaunchDone = "firstLaunchDone"
     static let mediaEnabled = "mediaEnabled"
-    /// 켜진 브라우저 번들 ID를 쉼표로 이은 문자열(`@AppStorage` 호환).
-    static let enabledBrowsers = "enabledBrowsers"
+    /// 설정에서 끈 브라우저 번들 ID를 쉼표로 이은 문자열(`@AppStorage` 호환). 나머지는 실행 중이면 모두 대상.
+    static let disabledBrowsers = "disabledBrowsers"
 
     static func registerDefaults(_ defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
@@ -25,7 +25,7 @@ enum PrefKey {
             clipboardLimit: Constants.clipboardDefaultLimit,
             firstLaunchDone: false,
             mediaEnabled: false,
-            enabledBrowsers: "",
+            disabledBrowsers: "",
         ])
     }
 }

@@ -114,9 +114,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         #if MEDIA_ENABLED
         if let mediaController {
-            let ids = (defaults.string(forKey: PrefKey.enabledBrowsers) ?? "").split(separator: ",")
+            let ids = (defaults.string(forKey: PrefKey.disabledBrowsers) ?? "").split(separator: ",")
             let browsers = Set(ids.compactMap { BrowserKind(rawValue: String($0)) })
-            if mediaController.enabledBrowsers != browsers { mediaController.enabledBrowsers = browsers }
+            if mediaController.disabledBrowsers != browsers { mediaController.disabledBrowsers = browsers }
             let enabled = defaults.bool(forKey: PrefKey.mediaEnabled)
             if mediaController.isEnabled != enabled { mediaController.isEnabled = enabled }
         }

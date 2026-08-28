@@ -6,7 +6,7 @@ import SwiftUI
 struct MediaView: View {
     let controller: MediaController
     @Environment(\.notchHost) private var host
-    @State private var dragFraction: Double?
+    @State private var showGuide = false
 
     var body: some View {
         Group {
@@ -23,7 +23,7 @@ struct MediaView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(8)
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-        .onAppear { controller.setPanelOpen(true) }
+        .onAppear { controller.setPanelOpen(true); showGuide = false }
         .onDisappear { controller.setPanelOpen(false) }
     }
 
@@ -41,14 +41,15 @@ struct MediaView: View {
                 Text(np.title).font(.caption.bold()).lineLimit(1)
                 HStack(spacing: 4) {
                     Text(np.artist ?? np.siteName).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                    if controller.sourceCount > 1, let name = controller.sourceName {
+                    if let name = controller.sourceName {
                         Spacer(minLength: 2)
+                        // 어느 브라우저를 제어 중인지 항상 보여 준다. 후보가 둘 이상이면 눌러서 전환.
                         Button { controller.cycleSource() } label: {
-                            Label(name, systemImage: "arrow.left.arrow.right").font(.caption2)
+                            Label(name, systemImage: controller.sourceCount > 1 ? "arrow.left.arrow.right" : "globe").font(.caption2)
                                 .padding(.horizontal, 5).padding(.vertical, 1)
                                 .background(Color.white.opacity(0.12), in: Capsule())
                         }
-                        .buttonStyle(.plain).help("Switch browser")
+                        .buttonStyle(.plain).disabled(controller.sourceCount < 2).help("Switch browser")
                     }
                 }
                 HStack(spacing: 14) {
@@ -56,7 +57,7 @@ struct MediaView: View {
                     control(np.playing ? "pause.fill" : "play.fill") { controller.send(np.playing ? .pause : .play) }
                     control("forward.fill") { controller.send(.next) }
                     Spacer()
-                    control("arrow.up.forward.app") { controller.revealCurrentTab() }
+                    control("arrow.up.forward.app") { reveal() }
                         .help("Show tab in browser")
                 }
                 .padding(.top, 2)
@@ -92,18 +93,32 @@ struct MediaView: View {
 
     private func readOnlyView(title: String, hint: String?) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.bold()).lineLimit(2)
-            if let hint {
-                Text("Controls need “Allow JavaScript from Apple Events”").font(.caption2).foregroundStyle(.secondary)
-                HStack(spacing: 10) {
-                    // 브라우저를 앞으로 가져와 메뉴 막대가 그 브라우저 것이 되게 한 뒤 경로를 안내한다.
-                    Button("Where is it?") { controller.revealCurrentTab(); host?.showToast(hint, action: nil) }
-                    Button("Show tab") { controller.revealCurrentTab() }
+            if showGuide, let hint {
+                // 토스트는 한 줄이라 잘린다 — 안내는 패널 안에 펼쳐 보여 준다.
+                Text(hint).font(.caption2).fixedSize(horizontal: false, vertical: true)
+                Button("Done") { showGuide = false }.buttonStyle(.link).font(.caption2)
+            } else {
+                Text(title).font(.caption.bold()).lineLimit(2)
+                if let name = controller.sourceName {
+                    Text(name).font(.caption2).foregroundStyle(.secondary)
                 }
-                .buttonStyle(.link).font(.caption2)
+                if let hint {
+                    Text("Controls need “Allow JavaScript from Apple Events”").font(.caption2).foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Button("Where is it?") { showGuide = true; _ = hint }
+                        Button("Show tab") { reveal() }
+                    }
+                    .buttonStyle(.link).font(.caption2)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 브라우저 탭을 앞으로 가져오고 패널은 접는다(패널이 브라우저 위를 가리지 않게).
+    private func reveal() {
+        controller.revealCurrentTab()
+        host?.collapse()
     }
 
     private func permissionView(_ browser: BrowserKind) -> some View {

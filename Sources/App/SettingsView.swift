@@ -22,7 +22,7 @@ struct GeneralSettingsView: View {
     @AppStorage(PrefKey.clipboardEnabled) private var clipboardEnabled = true
     @AppStorage(PrefKey.clipboardLimit) private var clipboardLimit = Constants.clipboardDefaultLimit
     @AppStorage(PrefKey.mediaEnabled) private var mediaEnabled = false
-    @AppStorage(PrefKey.enabledBrowsers) private var enabledBrowsers = ""
+    @AppStorage(PrefKey.disabledBrowsers) private var disabledBrowsers = ""
     @State private var confirmHideIcon = false
     @State private var launchError: String?
     @State private var isRevertingLaunchToggle = false
@@ -89,14 +89,14 @@ struct GeneralSettingsView: View {
 }
 
 extension GeneralSettingsView {
-    /// `enabledBrowsers`(쉼표 구분 번들 ID) 안의 한 브라우저를 토글하는 바인딩.
+    /// 브라우저 토글: 켜짐 = `disabledBrowsers`(쉼표 구분 번들 ID)에 없음.
     fileprivate func browserBinding(_ browser: BrowserKind) -> Binding<Bool> {
         Binding(
-            get: { enabledBrowsers.split(separator: ",").contains(Substring(browser.rawValue)) },
+            get: { !disabledBrowsers.split(separator: ",").contains(Substring(browser.rawValue)) },
             set: { on in
-                var ids = Set(enabledBrowsers.split(separator: ",").map(String.init))
-                if on { ids.insert(browser.rawValue) } else { ids.remove(browser.rawValue) }
-                enabledBrowsers = ids.sorted().joined(separator: ",")
+                var ids = Set(disabledBrowsers.split(separator: ",").map(String.init))
+                if on { ids.remove(browser.rawValue) } else { ids.insert(browser.rawValue) }
+                disabledBrowsers = ids.sorted().joined(separator: ",")
             })
     }
 }

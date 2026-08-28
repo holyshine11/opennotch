@@ -55,11 +55,13 @@ enum MediaScript {
           .catch(() => { window.__onArt = {src: art.src, data: null}; })
           .finally(() => { window.__onArtBusy = false; });
       }
+      const ms = navigator.mediaSession && navigator.mediaSession.playbackState;
+      const playing = (ms === 'playing' || ms === 'paused') ? ms === 'playing' : !!(v && !v.paused && !v.ended);
       return JSON.stringify({
         title: (md && md.title) || document.title,
         artist: (md && md.artist) || null,
         artwork: (cache && art && cache.src === art.src) ? cache.data : null,
-        playing: !!(v && !v.paused && !v.ended),
+        playing: playing,
         position: (v && isFinite(v.currentTime)) ? v.currentTime : 0,
         duration: (v && isFinite(v.duration)) ? v.duration : 0,
         site: location.host.startsWith('music.') ? 'youtube_music' : 'youtube'
@@ -73,8 +75,9 @@ enum MediaScript {
       const q = s => document.querySelector(s);
       const cmd = '__CMD__';
       const arg = __ARG__;
+      const playBtn = () => (q('#play-pause-button') || q('.ytp-play-button'))?.click();
       if (cmd === 'seek' && v && isFinite(v.duration)) v.currentTime = arg * v.duration;
-      else if (cmd === 'play' && v) v.play();
+      else if (cmd === 'play' && v) { const p = v.play(); if (p && p.catch) p.catch(() => playBtn()); }
       else if (cmd === 'pause' && v) v.pause();
       else if (cmd === 'next') (q('.ytp-next-button') || q('ytmusic-player-bar .next-button'))?.click();
       else if (cmd === 'prev') (q('.ytp-prev-button') || q('ytmusic-player-bar .previous-button'))?.click();
@@ -101,6 +104,7 @@ enum MediaScript {
         set sep to ASCII character 9
         set pw to \(prefer?.window ?? 0)
         set pt to \(prefer?.tab ?? 0)
+        with timeout of \(Int(Constants.mediaScriptTimeout)) seconds
         tell application id "\(browser.rawValue)"
             set best to ""
             repeat with wi from 1 to count of windows
@@ -126,6 +130,7 @@ enum MediaScript {
             if best is "" then return "NONE"
             return best
         end tell
+        end timeout
         """
     }
 
@@ -135,9 +140,11 @@ enum MediaScript {
         let target = "tab \(tab) of window \(window)"
         let run = browser.isSafari ? "do JavaScript \"\(js)\" in \(target)" : "execute \(target) javascript \"\(js)\""
         return """
+        with timeout of \(Int(Constants.mediaScriptTimeout)) seconds
         tell application id "\(browser.rawValue)"
             \(run)
         end tell
+        end timeout
         """
     }
 
@@ -146,12 +153,23 @@ enum MediaScript {
         let select = browser.isSafari
             ? "set current tab of window \(window) to tab \(tab) of window \(window)"
             : "set active tab index of window \(window) to \(tab)"
+        let unminimize = browser.isSafari ? "set miniaturized of window \(window) to false" : "set minimized of window \(window) to false"
+        // 최소화·숨김 상태에서도 창이 나타나야 한다. 각 단계는 실패해도 다음으로 넘어간다.
         return """
+        with timeout of \(Int(Constants.mediaScriptTimeout)) seconds
         tell application id "\(browser.rawValue)"
-            \(select)
-            set index of window \(window) to 1
+            try
+                \(unminimize)
+            end try
+            try
+                \(select)
+            end try
+            try
+                set index of window \(window) to 1
+            end try
             activate
         end tell
+        end timeout
         """
     }
 
@@ -163,9 +181,9 @@ enum MediaScript {
         return ProbeResult(window: w, tab: t, url: parts[3], title: parts[4], jsErrorCode: Int(parts[5]), json: parts[6])
     }
 
-    /// 탭 제목에서 사이트 접미사를 뗀다: "제목 - YouTube Music" → "제목".
+    /// 탭 제목에서 사이트 접미사를 뗀다: "제목 - YouTube Music" / "제목 | YouTube Music" → "제목".
     static func cleanTitle(_ title: String) -> String {
-        for suffix in [" - YouTube Music", " - YouTube"] where title.hasSuffix(suffix) {
+        for suffix in [" - YouTube Music", " | YouTube Music", " - YouTube", " | YouTube"] where title.hasSuffix(suffix) {
             return String(title.dropLast(suffix.count))
         }
         return title

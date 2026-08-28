@@ -33,6 +33,8 @@ enum Constants {
     static let mediaPollInterval: TimeInterval = 2
     static let mediaScriptTimeout: TimeInterval = 3
     static let mediaErrorBackoff: TimeInterval = 30
+    static let mediaBrowserBackoff: TimeInterval = 15
+    static let mediaTickInterval: TimeInterval = 0.5
     static let mediaCommandRefreshDelay: TimeInterval = 0.5
     static let mediaArtworkMaxBytes: Int = 49_152
     static let mediaArtworkTargetPixels: Int = 96

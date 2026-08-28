@@ -25,6 +25,7 @@ import Testing
         let cmd = MediaScript.command(browser: .chrome, window: 2, tab: 3, .next)
         #expect(cmd.contains("execute tab 3 of window 2 javascript"))
         #expect(cmd.contains("const cmd = 'next'"))
+        #expect(MediaScript.probeJSOneLine.contains("navigator.mediaSession.playbackState"))
         #expect(!cmd.contains("__CMD__"))
         let seek = MediaScript.command(browser: .whale, window: 1, tab: 1, .seek(0.25))
         #expect(seek.contains("const cmd = 'seek'") && seek.contains("const arg = 0.25"))
@@ -36,6 +37,8 @@ import Testing
         #expect(script.contains("set pw to 2") && script.contains("set pt to 5"))
         #expect(script.contains("(wi = pw and ti = pt)"))
         #expect(MediaScript.probe(browser: .chrome).contains("set pw to 0"))
+        #expect(script.hasPrefix("set sep") && script.contains("with timeout of \(Int(Constants.mediaScriptTimeout)) seconds") && script.hasSuffix("end timeout"))
+        #expect(MediaScript.command(browser: .chrome, window: 1, tab: 1, .play).contains("with timeout of"))
         let activate = MediaScript.activate(browser: .whale, window: 1, tab: 3)
         #expect(activate.contains("set active tab index of window 1 to 3") && activate.contains("activate"))
         #expect(MediaScript.activate(browser: .safari, window: 1, tab: 3).contains("set current tab of window 1 to tab 3"))
@@ -59,6 +62,7 @@ import Testing
         #expect(np.artworkData == Data("ABC".utf8))
         #expect(MediaScript.cleanTitle("Song - YouTube Music") == "Song")
         #expect(MediaScript.cleanTitle("Clip - YouTube") == "Clip")
+        #expect(MediaScript.cleanTitle("Song | YouTube Music") == "Song")
         #expect(MediaScript.cleanTitle("Plain") == "Plain")
     }
 }
