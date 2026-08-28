@@ -11,18 +11,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var observers: [NSObjectProtocol] = []
     private var hotKey: HotKey?
     private var shelfStore: ShelfStore?
+    private var clipboardStore: ClipboardStore?
+    private var clipboardMonitor: ClipboardMonitor?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PrefKey.registerDefaults()
         guard !Self.isRunningTests else { return }
 
         let controller = NotchWindowController()
-        applyPreferences(to: controller)
         let shelf = ShelfStore()
         shelfStore = shelf
         shelf.onCountChanged = { [weak controller] count in controller?.setShelfBadge(count) }
         controller.setShelfBadge(shelf.items.count)
-        controller.paneProvider = { (media: nil, shelf: AnyView(ShelfView(store: shelf)), clipboard: nil) }
+        let clipboard = ClipboardStore()
+        let monitor = ClipboardMonitor(store: clipboard)
+        clipboardStore = clipboard
+        clipboardMonitor = monitor
+        monitor.start()
+        applyPreferences(to: controller)
+        controller.paneProvider = { (media: nil, shelf: AnyView(ShelfView(store: shelf)), clipboard: AnyView(ClipboardView(store: clipboard, monitor: monitor))) }
+        observers.append(NotificationCenter.default.addObserver(forName: .openNotchClearClipboard, object: nil, queue: .main) { [weak clipboard] _ in
+            MainActor.assumeIsolated { clipboard?.removeAll() }
+        })
         controller.onDropURLs = { [weak controller, weak shelf] urls, zone in
             guard let controller, let shelf else { return false }
             switch zone {
@@ -68,6 +78,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        clipboardMonitor?.stop()
+    }
+
     private func applyPreferences(to controller: NotchWindowController) {
         let defaults = UserDefaults.standard
         let hover = defaults.bool(forKey: PrefKey.hoverToOpen)
@@ -80,6 +94,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hotKey = HotKey { [weak controller] in controller?.viewModel.send(.toggleRequested) }
         } else if !wantsHotKey {
             hotKey = nil
+        }
+
+        if let clipboardMonitor, let clipboardStore {
+            let enabled = defaults.bool(forKey: PrefKey.clipboardEnabled)
+            if clipboardMonitor.isEnabled != enabled { clipboardMonitor.isEnabled = enabled }
+            let limit = defaults.integer(forKey: PrefKey.clipboardLimit)
+            if limit > 0, clipboardStore.limit != limit { clipboardStore.limit = limit }
         }
     }
 }

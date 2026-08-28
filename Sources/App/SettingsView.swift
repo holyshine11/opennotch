@@ -53,6 +53,7 @@ struct GeneralSettingsView: View {
                 Toggle("Keep clipboard history", isOn: $clipboardEnabled)
                 Stepper("Maximum items: \(clipboardLimit)", value: $clipboardLimit,
                         in: Constants.clipboardLimitRange, step: Constants.clipboardLimitStep)
+                Button("Clear history") { NotificationCenter.default.post(name: .openNotchClearClipboard, object: nil) }
             }
         }
         .formStyle(.grouped)
