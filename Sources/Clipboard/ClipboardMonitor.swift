@@ -62,7 +62,9 @@ final class ClipboardMonitor {
     func poll() {
         guard isEnabled, pasteboard.changeCount != lastChangeCount else { return }
         lastChangeCount = pasteboard.changeCount
-        guard canReadContents() else { store.pasteboardBlocked = true; return }
+        let allowed = canReadContents()
+        allowDefaultReadOnce = false
+        guard allowed else { store.pasteboardBlocked = true; return }
         store.pasteboardBlocked = false
         let types = pasteboard.types ?? []
         guard !types.contains(where: Self.excludedTypes.contains) else { return }
@@ -78,6 +80,9 @@ final class ClipboardMonitor {
         }
     }
 
+    /// 테스트용: `.default` 1회 읽기 플래그가 아직 소비되지 않았는지.
+    var isDefaultReadPending: Bool { allowDefaultReadOnce }
+
     // MARK: 내부
 
     private func canReadContents() -> Bool {
@@ -86,8 +91,7 @@ final class ClipboardMonitor {
             switch pasteboard.accessBehavior {
             case .alwaysAllow: return true
             case .default:
-                if allowDefaultReadOnce { allowDefaultReadOnce = false; return true }
-                return false
+                return allowDefaultReadOnce
             default: return false
             }
         }

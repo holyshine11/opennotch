@@ -83,6 +83,12 @@ import Testing
         m.poll()
         #expect(store.items.isEmpty)
     }
+
+    @Test func enableWithUserActionConsumesFlagEvenWhenNotNeeded() throws {
+        let (m, _, _) = try make()
+        m.enableWithUserAction()
+        #expect(m.isDefaultReadPending == false)
+    }
 }
 
 private extension NSImage {
