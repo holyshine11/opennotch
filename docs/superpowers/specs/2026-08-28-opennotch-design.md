@@ -26,7 +26,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 ### 3.1 접힌 상태
 - 노치 영역과 정확히 같은 크기·위치의 검은 형태만 보인다. 그림자·블러 없음(투명 영역 alpha 0 유지 — 메뉴바 클릭을 막지 않기 위해).
 - 셸프에 파일이 있으면 오른쪽 날개에 개수 배지. 그 외 날개 없음. (재생 아트워크 날개는 v1 제외 — 접힌 상태에서 브라우저 폴링을 하지 않기 위해.)
-- **가상 노치**: 대상 화면에 노치가 없으면(외장 모니터만 있는 Mac mini 등) 메뉴바 높이 × 180pt 검은 형태를 메뉴바 중앙에 그린다. 클릭·드래그 진입(+32pt)·단축키·메뉴바 "패널 열기" 모두 실제 노치와 같은 규칙으로 동작한다. 설정 `showVirtualNotch`(기본 ON)로 끌 수 있고, 끄면 메뉴바 아이콘·단축키로만 연다.
+- **가상 노치**: 대상 화면에 노치가 없으면(외장 모니터만 있는 Mac mini 등) 메뉴바 높이 × 180pt 검은 형태를 메뉴바 중앙에 그린다. 클릭·드래그 진입(+32pt)·단축키·메뉴바 "패널 열기" 모두 실제 노치와 같은 규칙으로 동작한다. 설정 `showVirtualNotch`(기본 ON)로 끌 수 있고, 끄면 접힌 모양(과 드래그 진입 밴드)만 숨기고 메뉴바 아이콘·단축키로 펼친 패널은 정상 표시된다.
 - 대상 화면 = 노치가 있는 화면 중 첫 번째, 없으면 `NSScreen.screens[0]`(메뉴바가 있는 화면). 화면 하나에만 표시한다.
 
 ### 3.2 펼치기 / 접기
@@ -47,7 +47,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 ```
 - 드래그 진입 시 레이아웃이 **두 드롭존**으로 바뀐다: 왼쪽 "AirDrop", 오른쪽 "셸프에 보관". 드롭 위치로 동작 결정. 하나의 AppKit 드롭 뷰가 패널 전체를 덮고 `draggingUpdated`의 커서 위치로 존을 판정하므로 존 사이 이동에 exit 이벤트가 없다.
 - 미디어 칸: `mediaEnabled == false`면 안내 문구 + **[YouTube 제어 사용하기]** 버튼(첫 Apple Event는 이 버튼 뒤에서만 발생). 브라우저 JS 토글이 꺼져 있으면 읽기 전용 표시 + 브라우저별 안내 버튼. `MEDIA_ENABLED` 빌드가 아니면 칸 자체가 없고 셸프가 전체 폭을 쓴다.
-- 클립보드 행: 칩 5개. [▸] 또는 검색창 포커스 시 칩 행이 세로 스크롤 목록(최대 높이 140pt, 전체 히스토리)으로 확장. 항목 우클릭: 삭제. "모두 지우기"는 설정에.
+- 클립보드 행: 칩 5개(고정 44pt). [▸] 또는 검색창 포커스 시 전체 히스토리 목록(최대 높이 140pt)이 **상단 두 칸 위로 overlay**로 펼쳐진다(패널 크기는 불변). 항목 우클릭: 삭제. "모두 지우기"는 설정에.
 - [⚙︎]: 메뉴바 아이콘과 같은 메뉴(설정… / OpenNotch 정보 / 종료) 팝업.
 
 ### 3.4 기능별 동작
@@ -61,7 +61,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 
 ### 3.5 메뉴바·설정·첫 실행
 - 메뉴바 아이콘(기본 표시): **좌클릭** 메뉴 — 패널 열기 ⌃⌥N / 설정… ⌘, / OpenNotch 정보 / 종료 ⌘Q. 아이콘을 숨길 때 1회 확인 시트("⚙︎ 버튼·⌃⌥N·앱 재실행으로 설정을 열 수 있습니다").
-- 앱을 다시 실행하면(`applicationShouldHandleReopen`) 패널을 펼치고 설정 창을 앞으로. 설정 열기 전 `NSApp.activate(ignoringOtherApps: true)`(LSUIElement 앱에서 창이 뒤에 뜨는 문제 방지).
+- 앱을 다시 실행하면(`applicationShouldHandleReopen`) 패널을 펼친다(설정은 패널의 ⚙︎ 메뉴로). 설정 열기 전 `NSApp.activate(ignoringOtherApps: true)`(LSUIElement 앱에서 창이 뒤에 뜨는 문제 방지).
 - 설정 창(표준 `Settings` 씬, 탭 3개): **일반**(호버로 열기 / 로그인 시 실행 / 메뉴바 아이콘 / 단축키 사용 / 가상 노치 표시 / 클립보드 사용·최대 개수·모두 지우기) · **미디어**(YouTube 제어 사용 / 브라우저별 켜기·상태) · **정보**(버전·GitHub·개인정보 처리방침).
 - 온보딩 창 없음. 첫 실행 시 패널을 1회 자동으로 펼친다(`firstLaunchDone`).
 - 권한 프롬프트: macOS 자동화 프롬프트("OpenNotch이(가) Safari를 제어하려고 합니다")가 **[YouTube 제어 사용하기]를 누른 뒤** 켜진 브라우저별로 1회. 그 외 프롬프트 0개.
@@ -109,7 +109,8 @@ OpenNotch/
 - `AirDropService`: `static func canSend() -> Bool`, `func send(urls: [URL], from host: NotchHost)`
 - `ClipboardStore` (@MainActor @Observable): `items: [ClipItem]`, `copyToPasteboard(id:)`, `remove(id:)`, `removeAll()`, `search(_:) -> [ClipItem]`; `ClipboardMonitor(store:)`: `start()`, `stop()`, `pasteboardBlocked: Bool`, `enableWithUserAction()`
 - `BrowserMediaController` (@MainActor @Observable): `state: MediaState`(`.off`, `.idle`, `.readOnly(title, browser)`, `.playing(NowPlaying)`, `.permissionDenied(browser)`, `.jsDisabled(browser)`), `enable()`, `setExpanded(_:)`, `send(_ cmd: MediaCommand)`
-- 뷰: `ShelfView(store:)`, `ClipboardView(store:)`, `MediaView(controller:)`, `DropZoneView(onEnter:onExit:onDrop:(zone, [URL]))`
+- 드롭: `NotchWindowController.onDropURLs: (([URL], DropZone) -> Bool)?` — P2가 연결. `true`면 컨트롤러가 `.drop(zone)`, `false`(예: AirDrop 불가)면 `.dropRejected`를 보내 패널을 펼친 채 토스트를 보여 준다.
+- 뷰: `ShelfView(store:)`, `ClipboardView(store:)`, `MediaView(controller:)`
 
 ### 4.4 노치 윈도우 (검증된 레시피)
 - `NotchPanel: NSPanel` — `styleMask [.borderless, .nonactivatingPanel]`, `isOpaque=false`, `backgroundColor=.clear`, `hasShadow=false`, `isMovable=false`, `hidesOnDeactivate=false`, `isReleasedWhenClosed=false`, `isFloatingPanel=true` **다음에** `level = .mainMenu + 3`, `collectionBehavior [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]`. 콘텐츠 뷰(NSHostingView 서브클래스)에서 `acceptsFirstMouse(for:) -> true`. `canBecomeKey`는 뷰모델 `wantsKey`일 때만 true. **`ignoresMouseEvents`는 절대 대입하지 않는다.**
@@ -135,6 +136,7 @@ init(clock: any Clock<Duration> = ContinuousClock())
 | dragExit(드롭 없이) | – | – | → collapsed |
 | drop(.shelf) | – | – | → expanded (idle 재시작) |
 | drop(.airdrop) | – | – | → collapsed |
+| dropRejected (핸들러가 false 반환: AirDrop 불가 등) | – | – | → expanded (idle 재시작, 토스트 표시) |
 | hotkey / menu "패널 열기" | → expanded | → collapsed | 무시 |
 | screenChanged | 프레임 재계산 | 프레임 재계산 | → collapsed |
 
