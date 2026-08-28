@@ -80,9 +80,36 @@ import Testing
         #expect(pb.types?.contains(.openNotchSource) == true)
     }
 
+    @Test func writeFilesUsesFileURLItemsWithMarker() throws {
+        let store = ClipboardStore(directory: try makeDir())
+        let pb = NSPasteboard(name: NSPasteboard.Name("com.holyshine11.opennotch.test.files"))
+        store.write(ClipItem.files(["/tmp/a.txt", "/tmp/b.txt"]), to: pb)
+        let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]
+        #expect(urls?.map(\.path) == ["/tmp/a.txt", "/tmp/b.txt"])
+        #expect(pb.pasteboardItems?.allSatisfy { $0.types.contains(.openNotchSource) } == true)
+    }
+
+    @Test func writeImageWritesPNGWithMarker() throws {
+        let dir = try makeDir()
+        let store = ClipboardStore(directory: dir)
+        let png = Data([0x89, 0x50, 0x4E, 0x47])
+        store.insert(ClipItem.image(byteCount: png.count), imagePNG: png)
+        let pb = NSPasteboard(name: NSPasteboard.Name("com.holyshine11.opennotch.test.image"))
+        store.write(store.items[0], to: pb)
+        #expect(pb.data(forType: .png) == png)
+        #expect(pb.types?.contains(.openNotchSource) == true)
+    }
+
     @Test func corruptedStoreStartsEmpty() throws {
         let dir = try makeDir()
         try Data("nope".utf8).write(to: dir.appendingPathComponent(Constants.clipboardStoreFileName))
         #expect(ClipboardStore(directory: dir).items.isEmpty)
+    }
+
+    @Test func loadEnforcesLimit() throws {
+        let dir = try makeDir()
+        let overflow = (0..<(Constants.clipboardDefaultLimit + 5)).map { text("\($0)") }
+        try JSONEncoder().encode(overflow).write(to: dir.appendingPathComponent(Constants.clipboardStoreFileName))
+        #expect(ClipboardStore(directory: dir).items.count == Constants.clipboardDefaultLimit)
     }
 }

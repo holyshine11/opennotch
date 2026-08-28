@@ -68,20 +68,31 @@ final class ClipboardStore {
     }
 
     /// 항목을 클립보드에 쓴다(마커 포함). 붙여넣기는 사용자가 ⌘V.
+    /// 모든 종류를 NSPasteboardItem 한 경로로 통일해 legacy API(setString(forType:))와
+    /// item API(writeObjects)를 한 세션에 섞지 않는다.
     func write(_ item: ClipItem, to pasteboard: NSPasteboard = .general) {
-        pasteboard.clearContents()
+        var pbItems: [NSPasteboardItem] = []
         switch item.kind {
         case .text, .url:
-            pasteboard.setString(item.text ?? "", forType: .string)
+            let pi = NSPasteboardItem()
+            pi.setString(item.text ?? "", forType: .string)
+            pbItems = [pi]
         case .image:
-            if let url = imageURL(for: item.id), let data = try? Data(contentsOf: url) {
-                pasteboard.setData(data, forType: .png)
-            }
+            guard let url = imageURL(for: item.id), let data = try? Data(contentsOf: url) else { return }
+            let pi = NSPasteboardItem()
+            pi.setData(data, forType: .png)
+            pbItems = [pi]
         case .files:
-            let urls = (item.filePaths ?? []).map { URL(fileURLWithPath: $0) as NSURL }
-            pasteboard.writeObjects(urls)
+            pbItems = (item.filePaths ?? []).map { path in
+                let pi = NSPasteboardItem()
+                pi.setString(URL(fileURLWithPath: path).absoluteString, forType: .fileURL)
+                return pi
+            }
         }
-        pasteboard.setString("1", forType: .openNotchSource)
+        guard !pbItems.isEmpty else { return }
+        pbItems.forEach { $0.setString("1", forType: .openNotchSource) }
+        pasteboard.clearContents()
+        pasteboard.writeObjects(pbItems)
     }
 
     // MARK: 내부
@@ -99,6 +110,9 @@ final class ClipboardStore {
         guard let data = try? Data(contentsOf: storeFileURL),
               let decoded = try? JSONDecoder().decode([ClipItem].self, from: data) else { items = []; return }
         items = decoded
+        let before = items.count
+        trim()
+        if items.count != before { persist() }
     }
 
     private func persist() {
