@@ -2,24 +2,55 @@ import AppKit
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    /// 테스트 호스트로 실행될 때는 UI를 만들지 않는다.
     static var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 
     private(set) var notchController: NotchWindowController?
+    private var observers: [NSObjectProtocol] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PrefKey.registerDefaults()
         guard !Self.isRunningTests else { return }
 
         let controller = NotchWindowController()
-        controller.viewModel.hoverToOpen = UserDefaults.standard.bool(forKey: PrefKey.hoverToOpen)
-        controller.showVirtualNotch = UserDefaults.standard.bool(forKey: PrefKey.showVirtualNotch)
-        controller.onDropURLs = { urls, zone in
+        applyPreferences(to: controller)
+        controller.onDropURLs = { urls, zone in   // P2가 교체
             controller.showToast("\(urls.count) file(s) → \(zone == .airdrop ? "AirDrop" : "Shelf")", action: nil)
         }
         controller.show()
         notchController = controller
+
+        observers.append(NotificationCenter.default.addObserver(
+            forName: .openNotchTogglePanel, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.notchController?.viewModel.send(.toggleRequested) }
+            })
+        observers.append(NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, let controller = self.notchController else { return }
+                    self.applyPreferences(to: controller)
+                }
+            })
+
+        let defaults = UserDefaults.standard
+        if !defaults.bool(forKey: PrefKey.firstLaunchDone) {
+            defaults.set(true, forKey: PrefKey.firstLaunchDone)
+            controller.viewModel.send(.toggleRequested)
+        }
+    }
+
+    /// Dock에 없는 앱을 다시 실행하면 패널을 펼친다.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if notchController?.viewModel.state == .collapsed { notchController?.viewModel.send(.toggleRequested) }
+        return false
+    }
+
+    private func applyPreferences(to controller: NotchWindowController) {
+        let defaults = UserDefaults.standard
+        let hover = defaults.bool(forKey: PrefKey.hoverToOpen)
+        if controller.viewModel.hoverToOpen != hover { controller.viewModel.hoverToOpen = hover }
+        let virtual = defaults.bool(forKey: PrefKey.showVirtualNotch)
+        if controller.showVirtualNotch != virtual { controller.showVirtualNotch = virtual }
     }
 }
