@@ -1,5 +1,17 @@
 import Foundation
 
+struct AppleScriptFailure: Error, Equatable, Sendable {
+    let code: Int
+    let message: String
+
+    static let permissionDenied = -1743   // 자동화 권한 거부
+    static let notRunning = -600
+    static let cantGet = -1728            // 창/탭 없음
+    static let invalidIndex = -1719
+    static let eventTimedOut = -1712      // AppleScript `with timeout` 초과
+    static let timedOut = -1              // 우리가 부여한 코드
+}
+
 /// AppleScript·JS 문자열만 만들고 결과를 파싱한다. 실행은 하지 않는다(테스트 대상).
 enum MediaScript {
     enum Command: Equatable, Sendable {
@@ -44,7 +56,8 @@ enum MediaScript {
       const v = document.querySelector('video');
       const md = navigator.mediaSession && navigator.mediaSession.metadata;
       const list = (md && md.artwork && md.artwork.length) ? Array.from(md.artwork) : [];
-      const art = list.map(a => ({src: a.src, w: parseInt(a.sizes) || 0})).sort((a, b) => a.w - b.w).find(a => a.w >= __ART_PX__) || list[0] || null;
+      const pick = list.map(a => ({src: a.src, w: parseInt(a.sizes) || 0})).sort((a, b) => a.w - b.w).find(a => a.w >= __ART_PX__) || list[0] || null;
+      const art = pick ? {src: pick.src.replace(/=w\d+-h\d+/, '=w__ART_PX__-h__ART_PX__')} : null;
       const cache = window.__onArt || null;
       if (art && (!cache || cache.src !== art.src) && !window.__onArtBusy) {
         window.__onArtBusy = true;
@@ -173,6 +186,21 @@ enum MediaScript {
         """
     }
 
+    // MARK: 오류 분류
+
+    /// 크로미움 계열이 "Apple Events의 JavaScript 허용"이 꺼져 있을 때 돌려주는 코드(2026-08-28 Whale 4.39·Chrome에서 채집).
+    static let chromiumJSDisabledCode = 12
+
+    /// 잠깐 지나가는 오류(탭 절전·로딩 중 타임아웃). 안내를 띄우지 않고 직전 상태를 유지한다.
+    static func isTransientJSError(_ code: Int) -> Bool {
+        code == AppleScriptFailure.eventTimedOut || code == AppleScriptFailure.timedOut
+    }
+
+    /// JS 토글이 꺼져 있어서 난 오류인지. Safari는 별도 코드가 없어 타임아웃이 아닌 모든 JS 오류를 토글 문제로 본다.
+    static func isJSDisabled(_ code: Int, browser: BrowserKind) -> Bool {
+        browser.isSafari ? !isTransientJSError(code) : code == chromiumJSDisabledCode
+    }
+
     // MARK: 파싱
 
     static func parseProbe(_ output: String) -> ProbeResult? {
@@ -203,8 +231,10 @@ struct NowPlaying: Codable, Equatable, Sendable {
 
     var siteName: String { site == "youtube_music" ? "YouTube Music" : "YouTube" }
 
-    var artworkData: Data? {
-        guard let artwork, let comma = artwork.firstIndex(of: ",") else { return nil }
+    var artworkData: Data? { artwork.flatMap(Self.decodeArtwork) }
+
+    static func decodeArtwork(_ artwork: String) -> Data? {
+        guard let comma = artwork.firstIndex(of: ",") else { return nil }
         return Data(base64Encoded: String(artwork[artwork.index(after: comma)...]))
     }
 }

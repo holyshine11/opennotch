@@ -54,6 +54,21 @@ import Testing
         #expect(MediaScript.parseProbe("FOUND\t1") == nil)
     }
 
+    @Test func artworkURLIsResizedAndErrorsAreClassified() {
+        let js = MediaScript.probeJSOneLine
+        // YouTube Music은 544px 원본 하나뿐이라 크기 파라미터를 바꿔 받는다(2026-08-29: 101KB → 상한 초과로 아트워크가 영영 비었음).
+        #expect(js.contains("=w\(Constants.mediaArtworkTargetPixels)-h\(Constants.mediaArtworkTargetPixels)"))
+        #expect(MediaScript.isTransientJSError(AppleScriptFailure.eventTimedOut))
+        #expect(MediaScript.isTransientJSError(AppleScriptFailure.timedOut))
+        #expect(!MediaScript.isTransientJSError(MediaScript.chromiumJSDisabledCode))
+        #expect(MediaScript.isJSDisabled(MediaScript.chromiumJSDisabledCode, browser: .whale))
+        #expect(!MediaScript.isJSDisabled(AppleScriptFailure.eventTimedOut, browser: .whale))
+        #expect(!MediaScript.isJSDisabled(-1708, browser: .chrome))
+        #expect(MediaScript.isJSDisabled(-1708, browser: .safari))
+        #expect(!MediaScript.isJSDisabled(AppleScriptFailure.eventTimedOut, browser: .safari))
+        #expect(BrowserKind.chrome.setupSteps.count == 1 && BrowserKind.safari.setupSteps.count == 2)
+    }
+
     @Test func nowPlayingDecodesAndCleansTitle() throws {
         let json = #"{"title":"Song","artist":"Band","artwork":"data:image/png;base64,QUJD","playing":false,"position":12.5,"duration":200,"site":"youtube_music"}"#
         let np = try JSONDecoder().decode(NowPlaying.self, from: Data(json.utf8))

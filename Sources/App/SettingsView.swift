@@ -63,7 +63,8 @@ struct GeneralSettingsView: View {
                 ForEach(BrowserKind.allCases.filter(\.isInstalled), id: \.rawValue) { browser in
                     Toggle(browser.displayName, isOn: browserBinding(browser)).disabled(!mediaEnabled)
                 }
-                Text("Controls need “Allow JavaScript from Apple Events” in the browser’s View › Developer menu. Without it only the tab title is shown.")
+                Button("Setup guide…") { NotificationCenter.default.post(name: .openNotchShowMediaSetup, object: nil) }
+                Text("Controls need “Allow JavaScript from Apple Events” in the browser. The guide shows where it is and whether it’s on.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             #endif

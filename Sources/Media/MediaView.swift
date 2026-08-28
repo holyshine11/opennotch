@@ -6,7 +6,6 @@ import SwiftUI
 struct MediaView: View {
     let controller: MediaController
     @Environment(\.notchHost) private var host
-    @State private var showGuide = false
 
     var body: some View {
         Group {
@@ -23,14 +22,16 @@ struct MediaView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(8)
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-        .onAppear { controller.setPanelOpen(true); showGuide = false }
+        .onAppear { controller.setPanelOpen(true) }
         .onDisappear { controller.setPanelOpen(false) }
     }
 
     private var offView: some View {
         VStack(spacing: 6) {
             Text("YouTube & YouTube Music").font(.caption).foregroundStyle(.secondary)
-            Button("Use YouTube controls") { controller.enableWithUserAction() }.buttonStyle(.bordered)
+            // 켜는 순간 안내 창을 같이 연다 — 권한 프롬프트와 브라우저 토글을 한 화면에서 보게.
+            Button("Use YouTube controls") { controller.enableWithUserAction(); openGuide() }.buttonStyle(.bordered)
+            Button("How to set up…") { openGuide() }.buttonStyle(.link).font(.caption2)
         }
     }
 
@@ -75,7 +76,7 @@ struct MediaView: View {
 
     private func artwork(_ np: NowPlaying) -> some View {
         Group {
-            if let data = np.artworkData, let image = NSImage(data: data) {
+            if let image = controller.artworkImage {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
             } else {
                 Image(systemName: "play.rectangle.fill").font(.title2).foregroundStyle(.secondary)
@@ -93,26 +94,25 @@ struct MediaView: View {
 
     private func readOnlyView(title: String, hint: String?) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            if showGuide, let hint {
-                // 토스트는 한 줄이라 잘린다 — 안내는 패널 안에 펼쳐 보여 준다.
-                Text(hint).font(.caption2).fixedSize(horizontal: false, vertical: true)
-                Button("Done") { showGuide = false }.buttonStyle(.link).font(.caption2)
-            } else {
-                Text(title).font(.caption.bold()).lineLimit(2)
-                if let name = controller.sourceName {
-                    Text(name).font(.caption2).foregroundStyle(.secondary)
-                }
-                if let hint {
-                    Text("Controls need “Allow JavaScript from Apple Events”").font(.caption2).foregroundStyle(.secondary)
-                    HStack(spacing: 10) {
-                        Button("Where is it?") { showGuide = true; _ = hint }
-                        Button("Show tab") { reveal() }
-                    }
-                    .buttonStyle(.link).font(.caption2)
-                }
+            Text(title).font(.caption.bold()).lineLimit(2)
+            if let name = controller.sourceName {
+                Text(name).font(.caption2).foregroundStyle(.secondary)
             }
+            if hint != nil {
+                Text("Controls need “Allow JavaScript from Apple Events”").font(.caption2).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 10) {
+                if hint != nil { Button("How to set up…") { openGuide() } }
+                Button("Show tab") { reveal() }
+            }
+            .buttonStyle(.link).font(.caption2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func openGuide() {
+        NotificationCenter.default.post(name: .openNotchShowMediaSetup, object: nil)
+        host?.collapse()
     }
 
     /// 브라우저 탭을 앞으로 가져오고 패널은 접는다(패널이 브라우저 위를 가리지 않게).
@@ -128,6 +128,7 @@ struct MediaView: View {
                 if let url = URL(string: Constants.automationPrivacySettingsURL) { NSWorkspace.shared.open(url) }
             }
             .buttonStyle(.bordered)
+            Button("How to set up…") { openGuide() }.buttonStyle(.link).font(.caption2)
         }
     }
 }

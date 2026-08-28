@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var clipboardMonitor: ClipboardMonitor?
     #if MEDIA_ENABLED
     private var mediaController: MediaController?
+    private var mediaSetupWindow: NSWindow?
     #endif
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -35,6 +36,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let media = MediaController()
         mediaController = media
         let mediaPane: AnyView? = AnyView(MediaView(controller: media))
+        observers.append(NotificationCenter.default.addObserver(forName: .openNotchShowMediaSetup, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.showMediaSetup() }
+        })
         #else
         let mediaPane: AnyView? = nil
         #endif
@@ -91,6 +95,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         clipboardMonitor?.stop()
     }
+
+    #if MEDIA_ENABLED
+    /// 설정 안내 창. 한 번 만들어 두고 닫아도 유지한다(닫기 = 숨김).
+    private func showMediaSetup() {
+        guard let mediaController else { return }
+        if mediaSetupWindow == nil {
+            let window = NSWindow(contentViewController: NSHostingController(rootView: MediaSetupGuideView(controller: mediaController)))
+            window.title = String(localized: "YouTube controls setup")
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            mediaSetupWindow = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        mediaSetupWindow?.makeKeyAndOrderFront(nil)
+    }
+    #endif
 
     private func applyPreferences(to controller: NotchWindowController) {
         let defaults = UserDefaults.standard

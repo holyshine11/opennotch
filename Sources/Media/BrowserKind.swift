@@ -25,15 +25,28 @@ enum BrowserKind: String, CaseIterable, Sendable {
     var isRunning: Bool { !NSRunningApplication.runningApplications(withBundleIdentifier: rawValue).isEmpty }
     var isInstalled: Bool { NSWorkspace.shared.urlForApplication(withBundleIdentifier: rawValue) != nil }
 
-    /// "Apple Events의 JavaScript 허용" 토글 위치 안내. 크로미움 계열은 보기 › 개발자 아래에 있고, Whale만 하위 메뉴 이름이 다르다.
-    var jsToggleHint: String {
+    /// "Apple Events의 JavaScript 허용"을 켜는 순서. 메뉴 이름은 실제 한국어 UI에서 채집(2026-08-29: Chrome·Whale 모두 보기 › 개발자 정보).
+    var setupSteps: [String] {
         switch self {
         case .safari:
-            String(localized: "Safari › Settings › Developer › Allow JavaScript from Apple Events (turn on Settings › Advanced › Show features for web developers first; only once)")
-        case .whale:
-            String(localized: "Whale menu bar › View › Developer info › Allow JavaScript from Apple Events (only once)")
+            [String(localized: "Safari menu › Settings… (⌘,) › Advanced tab › turn on “Show features for web developers” at the bottom"),
+             String(localized: "In the new “Developer” tab, check “Allow JavaScript from Apple Events”")]
+        case .chrome, .whale:
+            [String(localized: "Menu bar › View › Developer › click “Allow JavaScript from Apple Events” so it shows a check mark")]
         default:
-            String(localized: "\(displayName) menu bar › View › Developer › Allow JavaScript from Apple Events (only once)")
+            [String(localized: "\(displayName) menu bar › View › Developer › click “Allow JavaScript from Apple Events” so it shows a check mark")]
+        }
+    }
+
+    /// 한 줄 안내(툴팁·로그용).
+    var jsToggleHint: String { setupSteps.joined(separator: " → ") }
+
+    /// 실행 중이면 앞으로 가져오고, 아니면 연다 — 안내 창에서 바로 메뉴를 찾아가게.
+    func activate() {
+        if let app = NSRunningApplication.runningApplications(withBundleIdentifier: rawValue).first {
+            app.activate()
+        } else if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rawValue) {
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
         }
     }
 }
