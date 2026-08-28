@@ -29,6 +29,7 @@ final class NotchWindowController: NotchHost {
     private(set) var notch = NotchRect(rect: .zero, isVirtual: true)
     private var currentScreenKey: String = ""
     private var screenObserver: NSObjectProtocol?
+    private var monitors: EventMonitors?
 
     var panel: NSWindow { notchPanel }
     var showVirtualNotch = true { didSet { reposition(force: true) } }
@@ -40,6 +41,12 @@ final class NotchWindowController: NotchHost {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.screenParametersChanged() }
         }
+        let monitors = EventMonitors(
+            onOutsideClick: { [weak self] in self?.viewModel.send(.clickOutside) },
+            onEscape: { [weak self] in self?.viewModel.send(.escape) })
+        monitors.panelFrameProvider = { [weak self] in self?.notchPanel.frame ?? .zero }
+        monitors.start()
+        self.monitors = monitors
     }
 
     // MARK: 화면 선택
