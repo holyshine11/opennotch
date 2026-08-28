@@ -1,0 +1,78 @@
+name: OpenNotch
+options:
+  bundleIdPrefix: com.holyshine11
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    DEVELOPMENT_TEAM: MWC6DSJWJR
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    ENABLE_APP_SANDBOX: YES
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+targets:
+  OpenNotch:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: Resources
+    configFiles:
+      Debug: Config/Media.xcconfig
+      Release: Config/Media.xcconfig
+    info:
+      path: Resources/Info.plist
+      properties:
+        CFBundleDisplayName: OpenNotch
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        LSUIElement: true
+        LSMinimumSystemVersion: "14.0"
+        LSApplicationCategoryType: public.app-category.utilities
+        NSHumanReadableCopyright: "© 2026 holyshine11. MIT License."
+        ITSAppUsesNonExemptEncryption: false
+        ONGitHubURL: "https://github.com/holyshine11/OpenNotch"
+        ONPrivacyURL: "https://holyshine11.github.io/OpenNotch/privacy"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.holyshine11.opennotch
+        PRODUCT_NAME: OpenNotch
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_STRICT_CONCURRENCY: complete
+  OpenNotchTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+      - path: OpenNotch.entitlements
+        buildPhase: resources
+      - path: OpenNotch-NoMedia.entitlements
+        buildPhase: resources
+    dependencies:
+      - target: OpenNotch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.holyshine11.opennotch.tests
+        SWIFT_STRICT_CONCURRENCY: complete
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  OpenNotch:
+    build:
+      targets:
+        OpenNotch: all
+        OpenNotchTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - OpenNotchTests
