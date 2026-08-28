@@ -1,0 +1,26 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "열어 둔 YouTube 탭의 재생 정보를 읽고 재생/일시정지를 실행하기 위해 브라우저에 접근합니다."
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 holyshine11. MIT 라이선스."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

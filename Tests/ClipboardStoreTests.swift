@@ -67,8 +67,10 @@ import Testing
     @Test func titleIsTruncatedAndKindSpecific() throws {
         let long = String(repeating: "a", count: Constants.clipboardTitleMaxLength + 10)
         #expect(text(long).title.count == Constants.clipboardTitleMaxLength + 1)   // + ellipsis
-        #expect(ClipItem.files(["/a/b.txt", "/c/d.png"]).title == "2 files")
-        #expect(ClipItem.image(byteCount: 1).title == "Image")
+        // 제목은 현지화되므로(ko/en) 로케일 무관하게 검사한다.
+        #expect(ClipItem.files(["/a/b.txt", "/c/d.png"]).title.contains("2"))
+        #expect(ClipItem.files(["/a/b.txt"]).title == "b.txt")
+        #expect(!ClipItem.image(byteCount: 1).title.isEmpty)
         #expect(ClipItem.url("https://example.com/x").kind == .url)
     }
 

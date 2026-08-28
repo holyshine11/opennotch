@@ -39,10 +39,10 @@ struct ClipItem: Codable, Identifiable, Equatable, Sendable {
                 return String(oneLine.prefix(Constants.clipboardTitleMaxLength)) + "…"
             }
             return oneLine
-        case .image: return "Image"
+        case .image: return String(localized: "Image")
         case .files:
             let paths = filePaths ?? []
-            return paths.count == 1 ? (paths[0] as NSString).lastPathComponent : "\(paths.count) files"
+            return paths.count == 1 ? (paths[0] as NSString).lastPathComponent : String(localized: "\(paths.count) files")
         }
     }
 }
