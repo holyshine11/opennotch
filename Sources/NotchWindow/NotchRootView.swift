@@ -83,6 +83,8 @@ struct NotchRootView: View {
                         .frame(width: Constants.shelfWingWidth, height: notchHeight)
                         .background(NotchShape(bottomRadius: Constants.collapsedCornerRadius).fill(Color.black))
                         .offset(x: Constants.shelfWingWidth)
+                        .contentShape(Rectangle())
+                        .onTapGesture { viewModel.send(.clickNotch) }
                 }
             }
     }

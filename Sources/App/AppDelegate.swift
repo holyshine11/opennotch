@@ -34,7 +34,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     controller.showToast(String(localized: "AirDrop is unavailable. Turn on Wi‑Fi and Bluetooth."), action: nil)
                     return false
                 }
-                AirDropService.shared.send(urls: urls, from: controller.panel)
+                // QA#7: 드래그 세션이 아직 살아있는 동안 AirDrop 피커를 동기로 띄우면 드롭 콜백이
+                // 끝나지 않아 드래그가 멈춘다. true를 먼저 반환해 뷰모델이 접히게 하고, 전송은 다음 런루프로 미룬다.
+                Task { @MainActor in AirDropService.shared.send(urls: urls, from: controller.panel) }
                 return true
             }
         }

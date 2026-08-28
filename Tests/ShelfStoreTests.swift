@@ -88,6 +88,20 @@ import Testing
         #expect(counts == [1, 0])
     }
 
+    @Test func validatedURLRemovesMissingItem() throws {
+        let dir = try makeDir()
+        let file = try makeFile(in: dir, name: "vanish.txt")
+        let store = ShelfStore(directory: dir)
+        var counts: [Int] = []
+        store.onCountChanged = { counts.append($0) }
+        store.add(urls: [file])
+        let id = try #require(store.items.first?.id)
+        try FileManager.default.removeItem(at: file)
+        #expect(store.validatedURL(for: id) == nil)
+        #expect(store.items.isEmpty)
+        #expect(counts == [1, 0])
+    }
+
     @Test func addedItemURLIsSecurityScopedAndReleasedOnRemove() throws {
         let dir = try makeDir()
         let file = try makeFile(in: dir, name: "s.txt")

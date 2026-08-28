@@ -30,6 +30,17 @@ final class ShelfStore {
 
     func url(for id: UUID) -> URL? { resolved[id] }
 
+    /// 사용 시점에 원본 도달성을 재검사한다(§3.4). 삭제·이동돼 더 이상 열 수 없으면
+    /// 항목을 제거하고 nil을 반환한다 — 호출자는 nil이면 사용자에게 알려야 한다.
+    func validatedURL(for id: UUID) -> URL? {
+        guard let url = resolved[id] else { return nil }
+        guard (try? url.checkResourceIsReachable()) == true else {
+            remove(id: id)
+            return nil
+        }
+        return url
+    }
+
     // MARK: 변경
 
     func add(urls: [URL]) {
@@ -38,7 +49,7 @@ final class ShelfStore {
             let standardized = url.standardizedFileURL
             if resolved.values.contains(where: { $0.standardizedFileURL == standardized }) { continue }
             guard let bookmark = try? standardized.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) else {
-                logger.error("bookmark creation failed for \(standardized.lastPathComponent, privacy: .public)")
+                logger.error("bookmark creation failed for \(standardized.lastPathComponent)")
                 continue
             }
             // 드롭으로 받은 URL은 security-scoped가 아니므로, bookmark를 다시 해석해서 얻은
@@ -46,7 +57,7 @@ final class ShelfStore {
             var stale = false
             guard let scoped = try? URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale),
                   scoped.startAccessingSecurityScopedResource() else {
-                logger.error("access start failed for \(standardized.lastPathComponent, privacy: .public)")
+                logger.error("access start failed for \(standardized.lastPathComponent)")
                 continue
             }
             let item = ShelfItem(id: UUID(), bookmark: bookmark, displayName: standardized.lastPathComponent, addedAt: Date())
@@ -91,18 +102,18 @@ final class ShelfStore {
         for var item in decoded {
             var stale = false
             guard let url = try? URL(resolvingBookmarkData: item.bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale) else {
-                logger.info("pruned unreachable shelf item \(item.displayName, privacy: .public)")
+                logger.info("pruned unreachable shelf item \(item.displayName)")
                 needsPersist = true
                 continue
             }
             guard url.startAccessingSecurityScopedResource() else {
-                logger.info("pruned unreachable shelf item \(item.displayName, privacy: .public)")
+                logger.info("pruned unreachable shelf item \(item.displayName)")
                 needsPersist = true
                 continue
             }
             guard (try? url.checkResourceIsReachable()) == true else {
                 url.stopAccessingSecurityScopedResource()
-                logger.info("pruned unreachable shelf item \(item.displayName, privacy: .public)")
+                logger.info("pruned unreachable shelf item \(item.displayName)")
                 needsPersist = true
                 continue
             }

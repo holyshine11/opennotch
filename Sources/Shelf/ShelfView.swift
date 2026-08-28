@@ -26,7 +26,10 @@ struct ShelfView: View {
                                 .contextMenu { menu(for: item) }
                                 .onDrag {
                                     host?.resetIdle()
-                                    guard let url = store.url(for: item.id) else { return NSItemProvider() }
+                                    guard let url = store.validatedURL(for: item.id) else {
+                                        host?.showToast(String(localized: "Removed — the original file could not be found."), action: nil)
+                                        return NSItemProvider()
+                                    }
                                     return NSItemProvider(contentsOf: url) ?? NSItemProvider()
                                 }
                         }
@@ -40,19 +43,32 @@ struct ShelfView: View {
 
     @ViewBuilder private func menu(for item: ShelfItem) -> some View {
         Button("AirDrop") {
-            guard let url = store.url(for: item.id), let host else { return }
-            if AirDropService.shared.canSend(urls: [url]) {
-                AirDropService.shared.send(urls: [url], from: host.panel)
-                host.collapse()
-            } else {
-                host.showToast(String(localized: "AirDrop is unavailable. Turn on Wi‑Fi and Bluetooth."), action: nil)
+            guard let host else { return }
+            guard let url = store.validatedURL(for: item.id) else {
+                host.showToast(String(localized: "Removed — the original file could not be found."), action: nil)
+                return
             }
+            guard AirDropService.shared.canSend(urls: [url]) else {
+                host.showToast(String(localized: "AirDrop is unavailable. Turn on Wi‑Fi and Bluetooth."), action: nil)
+                return
+            }
+            // QA#7: 드래그가 아니라 메뉴 액션이지만, 동기 전송이 패널을 붙잡아 두지 않도록 동일하게 미룬다.
+            host.collapse()
+            Task { @MainActor in AirDropService.shared.send(urls: [url], from: host.panel) }
         }
         Button("Reveal in Finder") {
-            if let url = store.url(for: item.id) { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            guard let url = store.validatedURL(for: item.id) else {
+                host?.showToast(String(localized: "Removed — the original file could not be found."), action: nil)
+                return
+            }
+            NSWorkspace.shared.activateFileViewerSelecting([url])
         }
         Button("Quick Look") {
-            if let url = store.url(for: item.id) { QuickLookController.shared.preview(url) }
+            guard let url = store.validatedURL(for: item.id) else {
+                host?.showToast(String(localized: "Removed — the original file could not be found."), action: nil)
+                return
+            }
+            QuickLookController.shared.preview(url)
         }
         Divider()
         Button("Remove", role: .destructive) { store.remove(id: item.id) }
