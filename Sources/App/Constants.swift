@@ -22,4 +22,11 @@ enum Constants {
     static let clipboardDefaultLimit: Int = 100
     static let clipboardLimitRange: ClosedRange<Int> = 20...500
     static let clipboardLimitStep: Int = 10
+    static let clipboardStoreFileName: String = "clipboard.json"
+    static let clipboardImageDirectoryName: String = "clipboard"
+    static let clipboardMaxImageBytes: Int = 10_000_000
+    static let clipboardPollInterval: TimeInterval = 0.75
+    static let clipboardChipCount: Int = 5
+    static let clipboardListHeight: CGFloat = 140
+    static let clipboardTitleMaxLength: Int = 60
 }
