@@ -30,7 +30,10 @@ struct ShelfView: View {
                                         host?.showToast(String(localized: "Removed — the original file could not be found."), action: nil)
                                         return NSItemProvider()
                                     }
-                                    return NSItemProvider(contentsOf: url) ?? NSItemProvider()
+                                    // I3: contentsOf:는 파일 표현을 로드해 임시 사본 경로를 넘길 수 있다.
+                                    // NSURL은 NSItemProviderWriting으로 public.file-url/public.url을
+                                    // 원본 URL 그대로 등록한다(Finder 등 파일 드롭 목적지에서 원본 그대로 확인됨).
+                                    return NSItemProvider(object: url as NSURL)
                                 }
                         }
                     }
