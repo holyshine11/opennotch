@@ -145,7 +145,7 @@ init(clock: any Clock<Duration> = ContinuousClock())
 ### 4.6 셸프
 - `ShelfItem: Codable { id: UUID, bookmark: Data, displayName: String, addedAt: Date }` → `Application Support/OpenNotch/shelf.json`. 손상 시 빈 목록으로 초기화.
 - 추가: 드롭 URL로 `bookmarkData(options: .withSecurityScope)` 생성 → **그 bookmark를 해석한 scoped URL**에 `startAccessingSecurityScopedResource()`(드롭 URL 자체는 scoped가 아님). **access는 항목이 셸프에 있는 동안 유지**하고 remove/removeAll/상한 퇴출에서 `stop`(종료 시 미해제는 커널 회수로 허용). 로드 시 해석·start·`checkResourceIsReachable()` 3단 검사로 실패 항목 제거(start 후 실패면 stop), stale이면 bookmark 재생성 후 영속. 사용 시점(메뉴·드래그 아웃)에는 `validatedURL(for:)`로 도달성을 다시 확인해 실패 시 즉시 제거 + 토스트. 타임스탬프 API 호출 없음.
-- 썸네일: `QLThumbnailGenerator`(`Constants.shelfThumbnailSize` = 48pt), 실패 시 `NSWorkspace.shared.icon(forFile:)`. 미리보기: `QLPreviewPanel`(우클릭 메뉴로 호출). 드래그 아웃은 원본 파일 URL을 전달해야 한다(임시 사본 금지).
+- 썸네일: `QLThumbnailGenerator`(`Constants.shelfThumbnailSize` = 48pt), 실패 시 `NSWorkspace.shared.icon(forFile:)`. 미리보기: `QLPreviewPanel`(우클릭 메뉴로 호출). 드래그 아웃은 `NSItemProvider(object: url as NSURL)`로 원본 file-url을 등록한다(Finder 등 파일 수신자는 원본 내용을 받는다; Terminal처럼 경로 문자열만 받는 수신자에는 시스템이 샌드박스 임시 사본 경로를 줄 수 있음 — v1 알려진 제한).
 - AirDrop: `NSSharingService(named: .sendViaAirDrop)` → `canPerform(withItems:)` → `NSApp.activate(ignoringOtherApps: true)` → `perform(withItems:)`; 델리게이트 `sourceWindowForShareItems`는 `host.panel`. bookmark URL은 `didShareItems/didFailToShareItems`까지 access 유지.
 
 ### 4.7 클립보드
