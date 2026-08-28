@@ -10,6 +10,8 @@ struct NotchRootView: View {
     var shelfPane: AnyView?
     var clipboardPane: AnyView?
 
+    @Environment(\.openSettings) private var openSettings
+
     private var isOpen: Bool { viewModel.state != .collapsed }
     private var notchHeight: CGFloat { notch.rect.height }
 
@@ -79,10 +81,34 @@ struct NotchRootView: View {
                 (shelfPane ?? AnyView(placeholder("Shelf")))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            (clipboardPane ?? AnyView(placeholder("Clipboard")))
-                .frame(height: 44)
+            HStack(spacing: 8) {
+                (clipboardPane ?? AnyView(placeholder("Clipboard")))
+                    .frame(height: 44)
+                gearMenu
+            }
         }
         .padding(12)
+    }
+
+    private var gearMenu: some View {
+        Menu {
+            Button("Settings…") {
+                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
+            }
+            Button("About OpenNotch") {
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.orderFrontStandardAboutPanel(nil)
+            }
+            Divider()
+            Button("Quit OpenNotch") { NSApp.terminate(nil) }
+        } label: {
+            Image(systemName: "gearshape")
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Settings")
     }
 
     private var dropZones: some View {

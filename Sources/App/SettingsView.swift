@@ -23,6 +23,7 @@ struct GeneralSettingsView: View {
     @AppStorage(PrefKey.clipboardLimit) private var clipboardLimit = Constants.clipboardDefaultLimit
     @State private var confirmHideIcon = false
     @State private var launchError: String?
+    @State private var isRevertingLaunchToggle = false
 
     var body: some View {
         Form {
@@ -34,7 +35,12 @@ struct GeneralSettingsView: View {
             Section("App") {
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, newValue in
-                        do { try LaunchAtLogin.set(newValue) } catch { launchError = error.localizedDescription; launchAtLogin = !newValue }
+                        guard !isRevertingLaunchToggle else { isRevertingLaunchToggle = false; return }
+                        do { try LaunchAtLogin.set(newValue) } catch {
+                            launchError = error.localizedDescription
+                            isRevertingLaunchToggle = true
+                            launchAtLogin = !newValue
+                        }
                     }
                 if LaunchAtLogin.requiresApproval {
                     Button("Allow in System Settings…") { LaunchAtLogin.openSystemSettings() }
@@ -53,7 +59,7 @@ struct GeneralSettingsView: View {
             Button("Hide") { showMenuBarIcon = false }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("You can still open Settings from the ⚙︎ button in the panel, with ⌃⌥N, or by launching OpenNotch again.")
+            Text("You can still open Settings from the ⚙︎ button in the panel (open it with ⌃⌥N or by launching OpenNotch again).")
         }
         .alert("Could not change login item", isPresented: Binding(get: { launchError != nil }, set: { if !$0 { launchError = nil } })) {
             Button("OK") {}
