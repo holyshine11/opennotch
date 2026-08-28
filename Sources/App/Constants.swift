@@ -12,6 +12,7 @@ enum Constants {
     static let panelWidth: CGFloat = 560
     static let panelBodyHeight: CGFloat = 190
     static let panelCornerRadius: CGFloat = 14
+    static let collapsedCornerRadius: CGFloat = 8
     static let panelTopOverhang: CGFloat = 1
     static let shelfCapacity: Int = 12
     static let clipboardDefaultLimit: Int = 100

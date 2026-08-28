@@ -26,7 +26,7 @@ struct NotchRootView: View {
             }
             .frame(width: isOpen ? Constants.panelWidth : notch.rect.width,
                    height: isOpen ? notchHeight + Constants.panelBodyHeight : notchHeight)
-            .contentShape(NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : 8))
+            .contentShape(NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : Constants.collapsedCornerRadius))
             .onTapGesture { if !isOpen { viewModel.send(.clickNotch) } }
             .onHover { inside in viewModel.send(inside ? .hoverEnter : .hoverExit) }
             Spacer(minLength: 0)
@@ -36,13 +36,15 @@ struct NotchRootView: View {
                alignment: .top)
         .animation(.spring(duration: Constants.expandAnimationDuration), value: viewModel.state)
         .overlay(alignment: .bottom) {
-            ToastView(center: toast).padding(.bottom, 8)
-                .animation(.easeInOut(duration: 0.2), value: toast.message)
+            if isOpen {
+                ToastView(center: toast).padding(.bottom, 8)
+                    .animation(.easeInOut(duration: 0.2), value: toast.message)
+            }
         }
     }
 
     private var shape: some View {
-        NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : 8)
+        NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : Constants.collapsedCornerRadius)
             .fill(Color.black)
     }
 

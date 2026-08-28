@@ -64,7 +64,7 @@ final class NotchWindowController: NotchHost {
         notch = NotchGeometry.notchRect(metrics)
         let hidden = notch.isVirtual && !showVirtualNotch
         notchPanel.setFrame(NotchGeometry.panelFrame(metrics, notch: notch), display: true)
-        notchPanel.contentView = NotchHostingView(rootView: makeRootView())
+        rebuildContent()
         notchPanel.alphaValue = hidden ? 0 : 1
     }
 
@@ -73,8 +73,14 @@ final class NotchWindowController: NotchHost {
         reposition()
     }
 
+    private func rebuildContent() {
+        notchPanel.contentView = NotchHostingView(rootView: makeRootView())
+    }
+
     /// P2~P4가 모듈 뷰를 끼워 넣을 수 있도록 오버라이드 지점을 둔다.
-    var paneProvider: (() -> (media: AnyView?, shelf: AnyView?, clipboard: AnyView?))?
+    var paneProvider: (() -> (media: AnyView?, shelf: AnyView?, clipboard: AnyView?))? {
+        didSet { guard notch.rect != .zero else { return }; rebuildContent() }
+    }
 
     private func makeRootView() -> some View {
         let panes: (media: AnyView?, shelf: AnyView?, clipboard: AnyView?) = paneProvider?() ?? (nil, nil, nil)
