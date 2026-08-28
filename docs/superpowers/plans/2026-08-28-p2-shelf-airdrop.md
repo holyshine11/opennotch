@@ -335,7 +335,13 @@ final class NotchBadge {
     func setShelfBadge(_ count: Int) { badge.shelfCount = count }
 ```
 
-- [ ] **Step 2: 루트 뷰 날개**
+- [ ] **Step 2: P1에서 이월된 결함 2건 수정 (같은 파일)**
+
+P1 최종 재리뷰가 남긴 Important 2건을 이 태스크에서 함께 처리한다.
+(a) 가상 노치 OFF(`hideCollapsedShape`)일 때 접힌 자리가 여전히 클릭·호버·드래그에 반응한다 → `NotchRootView.swift`의 ZStack에서 `.contentShape(...)`, `.onTapGesture(...)`, `.onHover(...)`를 `showsCollapsedVisuals`로 게이트한다: 예) `.onTapGesture(coordinateSpace: .local) { location in guard showsCollapsedVisuals else { return }; if !isOpen || location.y <= notchHeight { viewModel.send(.clickNotch) } }`, `.onHover { inside in guard showsCollapsedVisuals else { return }; ... }`, `.contentShape(showsCollapsedVisuals ? NotchShape(...) : NotchShape(bottomRadius: 0))`는 여전히 영역을 만들므로 대신 `.allowsHitTesting(showsCollapsedVisuals)`를 ZStack에 추가한다. 그리고 `NotchWindowController.rebuildContent()`에서 `container.collapsedActiveRect = hideCollapsedShape ? .zero : NotchGeometry.collapsedDropRect(notch: notch)`.
+(b) `NotchViewModel.collapse()`가 `wantsKey`를 false로 되돌리지만 패널의 키 윈도우 상태는 그대로다 → `NotchRootView.swift`의 바깥 `VStack`에 `.onChange(of: viewModel.state) { _, newState in if newState == .collapsed { host?.setWantsKey(false) } }`를 추가한다(`@Environment(\.notchHost) private var host` 선언 필요). `setWantsKey(false)`는 이미 false면 `resignKey`만 조건부로 호출하므로 멱등이다.
+
+- [ ] **Step 3: 루트 뷰 날개**
 
 `NotchRootView.swift`: 프로퍼티 `let badge: NotchBadge` 추가(`notch` 다음). `shape` 계산 프로퍼티를 다음으로 교체:
 ```swift
@@ -357,13 +363,13 @@ final class NotchBadge {
 ```
 (`showsCollapsedVisuals`는 P1 수정 웨이브에서 추가된 프로퍼티. 날개는 노치 오른쪽 바깥에 붙으며 윈도우 폭 560 안에 있다. 탭 영역(`contentShape`)은 노치만 유지.)
 
-- [ ] **Step 3: 빌드·테스트** — rc=0, 31개 통과. 앱 실행 후 접힌 상태에 날개가 없어야 한다(개수 0).
+- [ ] **Step 4: 빌드·테스트** — rc=0, 31개 통과. 앱 실행 후 접힌 상태에 날개가 없어야 한다(개수 0). 설정에서 "Show virtual notch"를 꺼도 이 Mac(실제 노치)에서는 변화가 없어야 한다.
 
-- [ ] **Step 4: 커밋**
+- [ ] **Step 5: 커밋**
 
 ```bash
 git add Sources/NotchWindow
-git -c user.name="holyshine11" -c user.email="anodpark@gmail.com" commit -m "feat: 접힌 노치 오른쪽 날개에 셸프 개수 배지
+git -c user.name="holyshine11" -c user.email="anodpark@gmail.com" commit -m "feat: 접힌 노치 오른쪽 날개에 셸프 개수 배지, 가상 노치 OFF 히트존·키 상태 동기화 수정
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```

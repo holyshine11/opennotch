@@ -1,6 +1,6 @@
-# OpenNotch 설계 스펙 (v1.1)
+# OpenNotch 설계 스펙 (v1.2)
 
-작성 2026-08-28 · 상태: 사용자 검토 대기 · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md` · v1.0 → v1.1: 3렌즈(일관성·App Store·YAGNI) 반박 리뷰 반영
+작성 2026-08-28 · 상태: 승인됨(v1.1) → v1.2는 P1 최종 리뷰 반영(드롭 거절 이벤트·reopen·클립보드 확장·가상 노치 숨김) · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md`
 
 ## 1. 한 줄 정의
 
