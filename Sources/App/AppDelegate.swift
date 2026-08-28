@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -9,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var notchController: NotchWindowController?
     private var observers: [NSObjectProtocol] = []
     private var hotKey: HotKey?
+    private var shelfStore: ShelfStore?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PrefKey.registerDefaults()
@@ -16,9 +18,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let controller = NotchWindowController()
         applyPreferences(to: controller)
-        controller.onDropURLs = { [weak controller] urls, zone in   // P2가 교체
-            controller?.showToast("\(urls.count) file(s) → \(zone == .airdrop ? "AirDrop" : "Shelf")", action: nil)
-            return true
+        let shelf = ShelfStore()
+        shelfStore = shelf
+        shelf.onCountChanged = { [weak controller] count in controller?.setShelfBadge(count) }
+        controller.setShelfBadge(shelf.items.count)
+        controller.paneProvider = { (media: nil, shelf: AnyView(ShelfView(store: shelf)), clipboard: nil) }
+        controller.onDropURLs = { [weak controller, weak shelf] urls, zone in
+            guard let controller, let shelf else { return false }
+            switch zone {
+            case .shelf:
+                shelf.add(urls: urls)
+                return true
+            case .airdrop:
+                guard AirDropService.shared.canSend(urls: urls) else {
+                    controller.showToast(String(localized: "AirDrop is unavailable. Turn on Wi‑Fi and Bluetooth."), action: nil)
+                    return false
+                }
+                AirDropService.shared.send(urls: urls, from: controller.panel)
+                return true
+            }
         }
         controller.show()
         notchController = controller
