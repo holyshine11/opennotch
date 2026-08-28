@@ -41,9 +41,16 @@ final class ShelfStore {
                 logger.error("bookmark creation failed for \(standardized.lastPathComponent, privacy: .public)")
                 continue
             }
+            // 드롭으로 받은 URL은 security-scoped가 아니므로, bookmark를 다시 해석해서 얻은
+            // scoped URL에 대해 access를 시작해야 release()의 stop과 짝이 맞는다.
+            var stale = false
+            guard let scoped = try? URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale),
+                  scoped.startAccessingSecurityScopedResource() else {
+                logger.error("access start failed for \(standardized.lastPathComponent, privacy: .public)")
+                continue
+            }
             let item = ShelfItem(id: UUID(), bookmark: bookmark, displayName: standardized.lastPathComponent, addedAt: Date())
-            _ = standardized.startAccessingSecurityScopedResource()
-            resolved[item.id] = standardized
+            resolved[item.id] = scoped
             items.append(item)
             changed = true
         }
@@ -80,22 +87,34 @@ final class ShelfStore {
             return
         }
         var kept: [ShelfItem] = []
+        var needsPersist = false
         for var item in decoded {
             var stale = false
-            guard let url = try? URL(resolvingBookmarkData: item.bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale),
-                  url.startAccessingSecurityScopedResource(),
-                  (try? url.checkResourceIsReachable()) == true else {
+            guard let url = try? URL(resolvingBookmarkData: item.bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale) else {
                 logger.info("pruned unreachable shelf item \(item.displayName, privacy: .public)")
+                needsPersist = true
+                continue
+            }
+            guard url.startAccessingSecurityScopedResource() else {
+                logger.info("pruned unreachable shelf item \(item.displayName, privacy: .public)")
+                needsPersist = true
+                continue
+            }
+            guard (try? url.checkResourceIsReachable()) == true else {
+                url.stopAccessingSecurityScopedResource()
+                logger.info("pruned unreachable shelf item \(item.displayName, privacy: .public)")
+                needsPersist = true
                 continue
             }
             if stale, let fresh = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
                 item.bookmark = fresh
+                needsPersist = true
             }
             resolved[item.id] = url
             kept.append(item)
         }
         items = kept
-        if kept.count != decoded.count { persist() }
+        if needsPersist { persist() }
     }
 
     private func persist() {

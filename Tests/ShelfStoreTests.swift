@@ -87,4 +87,17 @@ import Testing
         store.removeAll()
         #expect(counts == [1, 0])
     }
+
+    @Test func addedItemURLIsSecurityScopedAndReleasedOnRemove() throws {
+        let dir = try makeDir()
+        let file = try makeFile(in: dir, name: "s.txt")
+        let store = ShelfStore(directory: dir)
+        store.add(urls: [file])
+        let id = try #require(store.items.first?.id)
+        let url = try #require(store.url(for: id))
+        #expect(url.standardizedFileURL == file.standardizedFileURL)
+        #expect((try? url.checkResourceIsReachable()) == true)
+        store.remove(id: id)
+        #expect(store.url(for: id) == nil)
+    }
 }
