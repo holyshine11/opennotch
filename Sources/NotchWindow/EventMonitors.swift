@@ -10,6 +10,8 @@ final class EventMonitors {
     private let onOutsideClick: @MainActor () -> Void
     private let onEscape: @MainActor () -> Void
     var panelFrameProvider: @MainActor () -> CGRect = { .zero }
+    /// Esc를 소비할지 판단하기 위한 창 비교 대상. 설정 창 등 다른 창이 키일 때는 이벤트를 그대로 흘려보낸다.
+    var panelProvider: @MainActor () -> NSWindow? = { nil }
 
     private static let escapeKeyCode: UInt16 = 53
 
@@ -28,8 +30,10 @@ final class EventMonitors {
             return event
         }
         localKey = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard event.keyCode == Self.escapeKeyCode else { return event }
-            MainActor.assumeIsolated { self?.onEscape() }
+            guard event.keyCode == Self.escapeKeyCode, let self else { return event }
+            let isOurPanel = MainActor.assumeIsolated { event.window === self.panelProvider() }
+            guard isOurPanel else { return event }
+            MainActor.assumeIsolated { self.onEscape() }
             return nil
         }
     }

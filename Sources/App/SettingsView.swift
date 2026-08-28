@@ -51,7 +51,8 @@ struct GeneralSettingsView: View {
             }
             Section("Clipboard") {
                 Toggle("Keep clipboard history", isOn: $clipboardEnabled)
-                Stepper("Maximum items: \(clipboardLimit)", value: $clipboardLimit, in: 20...500, step: 10)
+                Stepper("Maximum items: \(clipboardLimit)", value: $clipboardLimit,
+                        in: Constants.clipboardLimitRange, step: Constants.clipboardLimitStep)
             }
         }
         .formStyle(.grouped)
@@ -64,7 +65,13 @@ struct GeneralSettingsView: View {
         .alert("Could not change login item", isPresented: Binding(get: { launchError != nil }, set: { if !$0 { launchError = nil } })) {
             Button("OK") {}
         } message: { Text(launchError ?? "") }
-        .onAppear { launchAtLogin = LaunchAtLogin.isEnabled }
+        .onAppear {
+            let systemValue = LaunchAtLogin.isEnabled
+            if launchAtLogin != systemValue {
+                isRevertingLaunchToggle = true
+                launchAtLogin = systemValue
+            }
+        }
     }
 }
 

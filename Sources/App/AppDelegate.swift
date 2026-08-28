@@ -16,8 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let controller = NotchWindowController()
         applyPreferences(to: controller)
-        controller.onDropURLs = { urls, zone in   // P2가 교체
-            controller.showToast("\(urls.count) file(s) → \(zone == .airdrop ? "AirDrop" : "Shelf")", action: nil)
+        controller.onDropURLs = { [weak controller] urls, zone in   // P2가 교체
+            controller?.showToast("\(urls.count) file(s) → \(zone == .airdrop ? "AirDrop" : "Shelf")", action: nil)
+            return true
         }
         controller.show()
         notchController = controller

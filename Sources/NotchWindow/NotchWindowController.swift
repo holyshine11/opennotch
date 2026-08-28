@@ -34,8 +34,10 @@ final class NotchWindowController: NotchHost {
 
     var panel: NSWindow { notchPanel }
     var showVirtualNotch = true { didSet { reposition(force: true) } }
-    /// P2가 연결: 셸프 추가 / AirDrop 전송. 뷰모델 상태 전이는 컨트롤러가 처리한다.
-    var onDropURLs: (([URL], DropZone) -> Void)?
+    /// P2가 연결: 셸프 추가 / AirDrop 전송. `false`를 반환하면 `.dropRejected`로 전이한다(예: AirDrop 불가 시 토스트).
+    var onDropURLs: (([URL], DropZone) -> Bool)?
+    /// 가상 노치가 꺼졌을 때 접힌 검은 모양·드래그 밴드만 숨긴다(§3.1). 펼친 패널은 항상 정상 렌더링된다.
+    private var hideCollapsedShape: Bool { notch.isVirtual && !showVirtualNotch }
 
     init(timers: NotchTimers = MainThreadTimers()) {
         viewModel = NotchViewModel(timers: timers)
@@ -48,6 +50,7 @@ final class NotchWindowController: NotchHost {
             onOutsideClick: { [weak self] in self?.viewModel.send(.clickOutside) },
             onEscape: { [weak self] in self?.viewModel.send(.escape) })
         monitors.panelFrameProvider = { [weak self] in self?.notchPanel.frame ?? .zero }
+        monitors.panelProvider = { [weak self] in self?.notchPanel }
         monitors.start()
         self.monitors = monitors
 
@@ -55,8 +58,8 @@ final class NotchWindowController: NotchHost {
         container.onEnter = { [weak self] in self?.viewModel.send(.dragEnter) }
         container.onExit = { [weak self] in self?.viewModel.send(.dragExit) }
         container.onDrop = { [weak self] urls, zone in
-            self?.onDropURLs?(urls, zone)
-            self?.viewModel.send(.drop(zone))
+            let handled = self?.onDropURLs?(urls, zone) ?? true
+            self?.viewModel.send(handled ? .drop(zone) : .dropRejected)
         }
     }
 
@@ -75,15 +78,16 @@ final class NotchWindowController: NotchHost {
     func reposition(force: Bool = false) {
         guard let screen = Self.targetScreen(NSScreen.screens) else { return }
         let metrics = screen.metrics
-        let key = "\(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] ?? "")|\(metrics.frame)|\(metrics.visibleFrame)"
+        // 실제 노치가 있는 화면은 safeAreaTop만, 없는 화면(가상 노치)은 visibleFrame.maxY만 키에 넣는다.
+        // visibleFrame 전체를 넣으면 Dock/메뉴바 자동 숨김마다 SwiftUI 트리가 통째로 재생성된다.
+        let variablePart: CGFloat = metrics.hasNotch ? metrics.safeAreaTop : metrics.visibleFrame.maxY
+        let key = "\(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] ?? "")|\(metrics.frame)|\(variablePart)"
         guard force || key != currentScreenKey else { return }
         currentScreenKey = key
 
         notch = NotchGeometry.notchRect(metrics)
-        let hidden = notch.isVirtual && !showVirtualNotch
         notchPanel.setFrame(NotchGeometry.panelFrame(metrics, notch: notch), display: true)
         rebuildContent()
-        notchPanel.alphaValue = hidden ? 0 : 1
     }
 
     private func screenParametersChanged() {
@@ -104,7 +108,7 @@ final class NotchWindowController: NotchHost {
 
     private func makeRootView() -> some View {
         let panes: (media: AnyView?, shelf: AnyView?, clipboard: AnyView?) = paneProvider?() ?? (nil, nil, nil)
-        return NotchRootView(viewModel: viewModel, toast: toast, notch: notch,
+        return NotchRootView(viewModel: viewModel, toast: toast, notch: notch, hideCollapsedShape: hideCollapsedShape,
                              mediaPane: panes.media, shelfPane: panes.shelf, clipboardPane: panes.clipboard)
             .environment(\.notchHost, self)
     }

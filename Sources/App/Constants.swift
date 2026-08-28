@@ -16,4 +16,6 @@ enum Constants {
     static let panelTopOverhang: CGFloat = 1
     static let shelfCapacity: Int = 12
     static let clipboardDefaultLimit: Int = 100
+    static let clipboardLimitRange: ClosedRange<Int> = 20...500
+    static let clipboardLimitStep: Int = 10
 }

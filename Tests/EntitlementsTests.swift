@@ -10,20 +10,23 @@ import Testing
         "com.apple.security.files.bookmarks.app-scope",
     ]
 
-    private func keys(of resource: String) throws -> Set<String> {
+    private func entitlements(of resource: String) throws -> [String: Any] {
         let url = try #require(Bundle(for: BundleToken.self).url(forResource: resource, withExtension: "entitlements"))
         let plist = try PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil)
-        let dict = try #require(plist as? [String: Any])
-        return Set(dict.keys)
+        return try #require(plist as? [String: Any])
     }
 
     @Test func mediaEntitlementsAreExactlyBasePlusMediaKeys() throws {
         // P1: 기본 3개. P4가 apple-events 키 2개를 추가하면 이 집합을 갱신한다.
-        #expect(try keys(of: "OpenNotch") == Self.base)
+        let dict = try entitlements(of: "OpenNotch")
+        #expect(Set(dict.keys) == Self.base)
+        for key in Self.base { #expect(dict[key] as? Bool == true) }
     }
 
     @Test func noMediaEntitlementsAreExactlyBase() throws {
-        #expect(try keys(of: "OpenNotch-NoMedia") == Self.base)
+        let dict = try entitlements(of: "OpenNotch-NoMedia")
+        #expect(Set(dict.keys) == Self.base)
+        for key in Self.base { #expect(dict[key] as? Bool == true) }
     }
 }
 

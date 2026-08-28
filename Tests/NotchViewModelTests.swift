@@ -82,7 +82,7 @@ final class FakeTimers: NotchTimers {
         #expect(vm.state == .expanded)
     }
 
-    @Test func idleCollapsesUnlessKeyOrDropTargeting() {
+    @Test func idleCollapsesUnlessKeyWindow() {
         let (vm, timers) = make()
         vm.send(.clickNotch)
         timers.fire(.idle)
@@ -110,8 +110,6 @@ final class FakeTimers: NotchTimers {
 
     @Test func dropOnShelfExpandsAndDropOnAirDropCollapses() {
         let (vm, timers) = make()
-        var dropped: [DropZone] = []
-        vm.onDrop = { dropped.append($0) }
 
         vm.send(.dragEnter)
         vm.send(.drop(.shelf))
@@ -121,7 +119,14 @@ final class FakeTimers: NotchTimers {
         vm.send(.dragEnter)
         vm.send(.drop(.airdrop))
         #expect(vm.state == .collapsed)
-        #expect(dropped == [.shelf, .airdrop])
+    }
+
+    @Test func dropRejectedExpandsAndRestartsIdle() {
+        let (vm, timers) = make()
+        vm.send(.dragEnter)
+        vm.send(.dropRejected)
+        #expect(vm.state == .expanded)
+        #expect(timers.scheduled[.idle] != nil)
     }
 
     @Test func eventsIgnoredWhileDropTargeting() {
@@ -131,7 +136,7 @@ final class FakeTimers: NotchTimers {
             vm.send(event)
             #expect(vm.state == .dropTargeting)
         }
-        timers.fire(.idle)
+        vm.send(.idleFired)
         #expect(vm.state == .dropTargeting)
     }
 
@@ -168,5 +173,19 @@ final class FakeTimers: NotchTimers {
         let cancelCountAfterFirstTrue = timers.cancelled.filter { $0 == .idle }.count
         vm.wantsKey = true                     // 같은 값 재대입
         #expect(timers.cancelled.filter { $0 == .idle }.count == cancelCountAfterFirstTrue)  // 재대입이 추가 cancel을 만들지 않는다
+    }
+
+    /// I4: 재구성으로 포커스 이탈 콜백을 놓쳐도, 접힘 전이가 wantsKey를 강제로 되돌려 다음 펼침에서 유휴 타이머가 다시 걸린다.
+    @Test func clickOutsideResetsWantsKeyAndReschedulesIdleOnNextExpand() {
+        let (vm, timers) = make()
+        vm.send(.clickNotch)
+        vm.wantsKey = true
+        vm.send(.clickOutside)
+        #expect(vm.state == .collapsed)
+        #expect(vm.wantsKey == false)
+
+        vm.send(.clickNotch)
+        #expect(vm.state == .expanded)
+        #expect(timers.scheduled[.idle] != nil)
     }
 }

@@ -11,6 +11,7 @@ enum NotchEvent: Equatable, Sendable {
     case clickOutside, escape, idleFired
     case dragEnter, dragExit
     case drop(DropZone)
+    case dropRejected
     case toggleRequested
     case screenChanged
 }
@@ -31,7 +32,6 @@ final class NotchViewModel {
     var wantsKey = false {
         didSet { guard oldValue != wantsKey, state == .expanded else { return }; wantsKey ? timers.cancel(.idle) : scheduleIdle() }
     }
-    var onDrop: ((DropZone) -> Void)?
 
     private let timers: NotchTimers
 
@@ -45,15 +45,16 @@ final class NotchViewModel {
         case (.dropTargeting, .dragExit):
             collapse()
         case (.dropTargeting, .drop(let zone)):
-            onDrop?(zone)
             zone == .shelf ? expand() : collapse()
+        case (.dropTargeting, .dropRejected):
+            expand()
         case (.dropTargeting, .screenChanged):
             collapse()
         case (.dropTargeting, _):
             break
 
         case (_, .dragEnter):
-            timers.cancel(.hoverOpen); timers.cancel(.hoverClose); timers.cancel(.idle)
+            cancelAllTimers()
             state = .dropTargeting
 
         case (.collapsed, .clickNotch), (.collapsed, .toggleRequested), (.collapsed, .hoverOpenFired):
@@ -92,11 +93,18 @@ final class NotchViewModel {
     }
 
     private func collapse() {
-        timers.cancel(.hoverOpen); timers.cancel(.hoverClose); timers.cancel(.idle)
+        cancelAllTimers()
         state = .collapsed
+        wantsKey = false   // 재구성으로 포커스 이탈 콜백을 놓쳐도 접힘 시 강제로 되돌린다(didSet 가드로 무부작용).
     }
 
     private func scheduleIdle() {
         timers.schedule(.idle, seconds: Constants.idleCollapseDelay) { [weak self] in self?.send(.idleFired) }
+    }
+
+    private func cancelAllTimers() {
+        timers.cancel(.hoverOpen)
+        timers.cancel(.hoverClose)
+        timers.cancel(.idle)
     }
 }
