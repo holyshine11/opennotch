@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) var notchController: NotchWindowController?
     private var observers: [NSObjectProtocol] = []
+    private var hotKey: HotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PrefKey.registerDefaults()
@@ -52,5 +53,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if controller.viewModel.hoverToOpen != hover { controller.viewModel.hoverToOpen = hover }
         let virtual = defaults.bool(forKey: PrefKey.showVirtualNotch)
         if controller.showVirtualNotch != virtual { controller.showVirtualNotch = virtual }
+
+        let wantsHotKey = defaults.bool(forKey: PrefKey.hotkeyEnabled)
+        if wantsHotKey, hotKey == nil {
+            hotKey = HotKey { [weak controller] in controller?.viewModel.send(.toggleRequested) }
+        } else if !wantsHotKey {
+            hotKey = nil
+        }
     }
 }
