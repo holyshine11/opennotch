@@ -1,6 +1,6 @@
-# OpenNotch 설계 스펙 (v1.2)
+# OpenNotch 설계 스펙 (v1.3)
 
-작성 2026-08-28 · 상태: 승인됨(v1.1) → v1.2는 P1 최종 리뷰 반영(드롭 거절 이벤트·reopen·클립보드 확장·가상 노치 숨김) · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md`
+작성 2026-08-28 · 상태: 승인됨(v1.1) → v1.2는 P1 최종 리뷰 반영(드롭 거절 이벤트·reopen·클립보드 확장·가상 노치 숨김) · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md` · v1.3: P2 구현에 맞춰 §4.3·§4.6 갱신(셸프 access 유지 모델, 서비스 시그니처)
 
 ## 1. 한 줄 정의
 
@@ -105,8 +105,10 @@ OpenNotch/
 }
 ```
 각 모듈의 공개 진입점:
-- `ShelfStore` (@MainActor @Observable): `items: [ShelfItem]`, `add(urls: [URL])`, `remove(id:)`, `removeAll()`, `withAccess(id:, _ body: (URL) throws -> T) rethrows -> T?`
-- `AirDropService`: `static func canSend() -> Bool`, `func send(urls: [URL], from host: NotchHost)`
+- `ShelfStore` (@MainActor @Observable): `items: [ShelfItem]`, `onCountChanged: ((Int) -> Void)?`, `add(urls: [URL])`, `remove(id:)`, `removeAll()`, `url(for id:) -> URL?`(access 유지 중인 URL), `validatedURL(for id:) -> URL?`(도달 불가면 즉시 제거하고 nil)
+- `AirDropService.shared`: `canSend(urls:) -> Bool`, `send(urls:from window: NSWindow)` — 진행 중 서비스는 `inFlight` 배열로 강참조, 완료/실패 델리게이트에서 제거
+- `QuickLookController.shared.preview(_ url:)`
+- `NotchHost.setShelfBadge(_ count:)` — 접힌 노치 날개 배지
 - `ClipboardStore` (@MainActor @Observable): `items: [ClipItem]`, `copyToPasteboard(id:)`, `remove(id:)`, `removeAll()`, `search(_:) -> [ClipItem]`; `ClipboardMonitor(store:)`: `start()`, `stop()`, `pasteboardBlocked: Bool`, `enableWithUserAction()`
 - `BrowserMediaController` (@MainActor @Observable): `state: MediaState`(`.off`, `.idle`, `.readOnly(title, browser)`, `.playing(NowPlaying)`, `.permissionDenied(browser)`, `.jsDisabled(browser)`), `enable()`, `setExpanded(_:)`, `send(_ cmd: MediaCommand)`
 - 드롭: `NotchWindowController.onDropURLs: (([URL], DropZone) -> Bool)?` — P2가 연결. `true`면 컨트롤러가 `.drop(zone)`, `false`(예: AirDrop 불가)면 `.dropRejected`를 보내 패널을 펼친 채 토스트를 보여 준다.
@@ -142,8 +144,8 @@ init(clock: any Clock<Duration> = ContinuousClock())
 
 ### 4.6 셸프
 - `ShelfItem: Codable { id: UUID, bookmark: Data, displayName: String, addedAt: Date }` → `Application Support/OpenNotch/shelf.json`. 손상 시 빈 목록으로 초기화.
-- 추가: `url.bookmarkData(options: .withSecurityScope)`. 사용: `URL(resolvingBookmarkData:options:.withSecurityScope, bookmarkDataIsStale:)` → `startAccessingSecurityScopedResource()`/`stop…`(defer). stale이면 재생성, 해석 실패면 제거+토스트. 존재 판정은 `checkResourceIsReachable()`(타임스탬프 API 호출 없음).
-- 썸네일: `QLThumbnailGenerator`(64pt), 실패 시 `NSWorkspace.shared.icon(forFile:)`. 미리보기: `QLPreviewPanel`(우클릭 메뉴로 호출).
+- 추가: 드롭 URL로 `bookmarkData(options: .withSecurityScope)` 생성 → **그 bookmark를 해석한 scoped URL**에 `startAccessingSecurityScopedResource()`(드롭 URL 자체는 scoped가 아님). **access는 항목이 셸프에 있는 동안 유지**하고 remove/removeAll/상한 퇴출에서 `stop`(종료 시 미해제는 커널 회수로 허용). 로드 시 해석·start·`checkResourceIsReachable()` 3단 검사로 실패 항목 제거(start 후 실패면 stop), stale이면 bookmark 재생성 후 영속. 사용 시점(메뉴·드래그 아웃)에는 `validatedURL(for:)`로 도달성을 다시 확인해 실패 시 즉시 제거 + 토스트. 타임스탬프 API 호출 없음.
+- 썸네일: `QLThumbnailGenerator`(`Constants.shelfThumbnailSize` = 48pt), 실패 시 `NSWorkspace.shared.icon(forFile:)`. 미리보기: `QLPreviewPanel`(우클릭 메뉴로 호출). 드래그 아웃은 원본 파일 URL을 전달해야 한다(임시 사본 금지).
 - AirDrop: `NSSharingService(named: .sendViaAirDrop)` → `canPerform(withItems:)` → `NSApp.activate(ignoringOtherApps: true)` → `perform(withItems:)`; 델리게이트 `sourceWindowForShareItems`는 `host.panel`. bookmark URL은 `didShareItems/didFailToShareItems`까지 access 유지.
 
 ### 4.7 클립보드
