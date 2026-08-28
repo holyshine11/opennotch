@@ -15,6 +15,10 @@ enum Constants {
     static let collapsedCornerRadius: CGFloat = 8
     static let panelTopOverhang: CGFloat = 1
     static let shelfCapacity: Int = 12
+    static let shelfStoreFileName: String = "shelf.json"
+    static let shelfThumbnailSize: CGFloat = 48
+    static let shelfWingWidth: CGFloat = 30
+    static let shelfGridColumns: Int = 4
     static let clipboardDefaultLimit: Int = 100
     static let clipboardLimitRange: ClosedRange<Int> = 20...500
     static let clipboardLimitStep: Int = 10
