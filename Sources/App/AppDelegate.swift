@@ -7,8 +7,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 
+    private(set) var notchController: NotchWindowController?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         PrefKey.registerDefaults()
         guard !Self.isRunningTests else { return }
+
+        let controller = NotchWindowController()
+        controller.viewModel.hoverToOpen = UserDefaults.standard.bool(forKey: PrefKey.hoverToOpen)
+        controller.showVirtualNotch = UserDefaults.standard.bool(forKey: PrefKey.showVirtualNotch)
+        controller.show()
+        notchController = controller
     }
 }
