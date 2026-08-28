@@ -38,7 +38,7 @@ struct ClipboardView: View {
                 fullList
                     .frame(height: Constants.clipboardListHeight)
                     .background(Color.black.opacity(0.92), in: RoundedRectangle(cornerRadius: 10))
-                    .offset(y: -(Constants.clipboardListHeight + 8))   // 행 위로 올려 상단 두 칸을 덮는다
+                    .offset(y: -(Constants.clipboardRowHeight + 8))   // 행 위로 올려 상단 두 칸을 덮는다
                     .transition(.opacity)
             }
         }

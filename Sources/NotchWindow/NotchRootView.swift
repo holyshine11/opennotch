@@ -113,7 +113,7 @@ struct NotchRootView: View {
             }
             HStack(spacing: 8) {
                 (clipboardPane ?? AnyView(placeholder("Clipboard")))
-                    .frame(height: 44)
+                    .frame(height: Constants.clipboardRowHeight)
                 gearMenu
             }
         }

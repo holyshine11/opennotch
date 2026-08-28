@@ -27,7 +27,8 @@ enum Constants {
     static let clipboardMaxImageBytes: Int = 10_000_000
     static let clipboardPollInterval: TimeInterval = 0.75
     static let clipboardChipCount: Int = 5
-    static let clipboardListHeight: CGFloat = 140
+    static let clipboardListHeight: CGFloat = 114
+    static let clipboardRowHeight: CGFloat = 44
     static let clipboardTitleMaxLength: Int = 60
     static let pasteboardPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Pasteboard"
 }
