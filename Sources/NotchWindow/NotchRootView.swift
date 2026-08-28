@@ -34,6 +34,15 @@ struct NotchRootView: View {
         .frame(width: Constants.panelWidth,
                height: notchHeight + Constants.panelBodyHeight + Constants.panelTopOverhang,
                alignment: .top)
+        .overlay(alignment: .top) {
+            // 접힌 상태 드래그 진입 영역: 노치 좌우 32pt, 노치 높이만. alpha 0.001이라 WindowServer가 드래그를 우리 창에 전달한다.
+            if !isOpen {
+                Color.black.opacity(0.001)
+                    .frame(width: notch.rect.width + Constants.dragEnterMargin * 2, height: notchHeight)
+                    .padding(.top, Constants.panelTopOverhang)
+                    .allowsHitTesting(false)
+            }
+        }
         .animation(.spring(duration: Constants.expandAnimationDuration), value: viewModel.state)
         .overlay(alignment: .bottom) {
             if isOpen {

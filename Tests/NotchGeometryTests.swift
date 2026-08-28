@@ -58,6 +58,15 @@ import Testing
         #expect(d.height == 32)
     }
 
+    @Test func collapsedDropRectIsPanelLocalNotchBandWithMargins() {
+        let n = NotchGeometry.notchRect(Self.notched)
+        let r = NotchGeometry.collapsedDropRect(notch: n)
+        #expect(r.width == 200 + Constants.dragEnterMargin * 2)
+        #expect(r.midX == Constants.panelWidth / 2)
+        #expect(r.maxY == 32 + Constants.panelBodyHeight)   // overhang 바로 아래 = 노치 밴드 상단
+        #expect(r.height == 32)
+    }
+
     /// 스펙 §4.9 수치. 상수가 바뀌면 여기서 잡힌다.
     @Test func specConstantsMatchDesign() {
         #expect(Constants.panelWidth == 560)

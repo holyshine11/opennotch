@@ -16,6 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = NotchWindowController()
         controller.viewModel.hoverToOpen = UserDefaults.standard.bool(forKey: PrefKey.hoverToOpen)
         controller.showVirtualNotch = UserDefaults.standard.bool(forKey: PrefKey.showVirtualNotch)
+        controller.onDropURLs = { urls, zone in
+            controller.showToast("\(urls.count) file(s) → \(zone == .airdrop ? "AirDrop" : "Shelf")", action: nil)
+        }
         controller.show()
         notchController = controller
     }

@@ -35,4 +35,13 @@ enum NotchGeometry {
     static func dragEnterRect(notch: NotchRect) -> CGRect {
         notch.rect.insetBy(dx: -Constants.dragEnterMargin, dy: 0)
     }
+
+    /// 접힌 상태 드래그 진입 영역을 패널 로컬 좌표(원점 좌하단)로. 노치 좌우 32pt, 높이는 노치 높이.
+    static func collapsedDropRect(notch: NotchRect) -> CGRect {
+        let width = notch.rect.width + Constants.dragEnterMargin * 2
+        let totalHeight = notch.rect.height + Constants.panelBodyHeight + Constants.panelTopOverhang
+        return CGRect(x: (Constants.panelWidth - width) / 2,
+                      y: totalHeight - Constants.panelTopOverhang - notch.rect.height,
+                      width: width, height: notch.rect.height)
+    }
 }

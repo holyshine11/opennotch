@@ -26,6 +26,7 @@ final class NotchWindowController: NotchHost {
     let viewModel: NotchViewModel
     let toast = ToastCenter()
     private let notchPanel = NotchPanel()
+    private let container = DropContainerView(frame: .zero)
     private(set) var notch = NotchRect(rect: .zero, isVirtual: true)
     private var currentScreenKey: String = ""
     private var screenObserver: NSObjectProtocol?
@@ -33,6 +34,8 @@ final class NotchWindowController: NotchHost {
 
     var panel: NSWindow { notchPanel }
     var showVirtualNotch = true { didSet { reposition(force: true) } }
+    /// P2가 연결: 셸프 추가 / AirDrop 전송. 뷰모델 상태 전이는 컨트롤러가 처리한다.
+    var onDropURLs: (([URL], DropZone) -> Void)?
 
     init(timers: NotchTimers = MainThreadTimers()) {
         viewModel = NotchViewModel(timers: timers)
@@ -47,6 +50,14 @@ final class NotchWindowController: NotchHost {
         monitors.panelFrameProvider = { [weak self] in self?.notchPanel.frame ?? .zero }
         monitors.start()
         self.monitors = monitors
+
+        container.isCollapsed = { [weak self] in self?.viewModel.state == .collapsed }
+        container.onEnter = { [weak self] in self?.viewModel.send(.dragEnter) }
+        container.onExit = { [weak self] in self?.viewModel.send(.dragExit) }
+        container.onDrop = { [weak self] urls, zone in
+            self?.onDropURLs?(urls, zone)
+            self?.viewModel.send(.drop(zone))
+        }
     }
 
     // MARK: 화면 선택
@@ -81,7 +92,9 @@ final class NotchWindowController: NotchHost {
     }
 
     private func rebuildContent() {
-        notchPanel.contentView = NotchHostingView(rootView: makeRootView())
+        container.collapsedActiveRect = NotchGeometry.collapsedDropRect(notch: notch)
+        container.embed(NotchHostingView(rootView: makeRootView()))
+        if notchPanel.contentView !== container { notchPanel.contentView = container }
     }
 
     /// P2~P4가 모듈 뷰를 끼워 넣을 수 있도록 오버라이드 지점을 둔다.
