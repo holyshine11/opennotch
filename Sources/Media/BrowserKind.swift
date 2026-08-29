@@ -38,6 +38,20 @@ enum BrowserKind: String, CaseIterable, Sendable {
         }
     }
 
+    /// 안내 창에서 클릭 경로를 메뉴 모양으로 그리기 위한 조각. 마지막 조각이 켤 항목.
+    /// Chrome·Whale 한국어 UI는 "개발자 정보", Edge 등은 "개발자"라 키를 나눈다.
+    var menuPath: [String] {
+        switch self {
+        case .safari:
+            [String(localized: "Safari"), String(localized: "Settings… (⌘,)"), String(localized: "Developer (Safari tab)"),
+             String(localized: "Allow JavaScript from Apple Events (Safari)")]
+        case .chrome, .whale:
+            [String(localized: "View"), String(localized: "Developer"), String(localized: "Allow JavaScript from Apple Events")]
+        default:
+            [String(localized: "View"), String(localized: "Developer (other browsers)"), String(localized: "Allow JavaScript from Apple Events")]
+        }
+    }
+
     /// 한 줄 안내(툴팁·로그용).
     var jsToggleHint: String { setupSteps.joined(separator: " → ") }
 
@@ -49,4 +63,5 @@ enum BrowserKind: String, CaseIterable, Sendable {
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
         }
     }
+
 }

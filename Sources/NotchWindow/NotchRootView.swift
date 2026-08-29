@@ -1,5 +1,26 @@
 import SwiftUI
 
+/// 펼친 패널의 왼쪽 상단 탭. 모듈 하나만 보여 화면을 덜 차지한다.
+enum NotchTab: CaseIterable {
+    case media, shelf, clipboard
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .media: "Media"
+        case .shelf: "AirDrop"
+        case .clipboard: "Clipboard"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .media: "play.circle"
+        case .shelf: "square.and.arrow.up.circle"
+        case .clipboard: "doc.on.clipboard"
+        }
+    }
+}
+
 /// 패널 콘텐츠. 좌표계는 SwiftUI(원점 좌상단), 크기 = 패널 frame.
 struct NotchRootView: View {
     let viewModel: NotchViewModel
@@ -14,6 +35,7 @@ struct NotchRootView: View {
     var clipboardPane: AnyView?
 
     @Environment(\.openSettings) private var openSettings
+    @State private var selectedTab: NotchTab = .media
     @Environment(\.notchHost) private var host
 
     private var isOpen: Bool { viewModel.state != .collapsed }
@@ -48,8 +70,9 @@ struct NotchRootView: View {
         .frame(width: Constants.panelWidth,
                height: notchHeight + Constants.panelBodyHeight + Constants.panelTopOverhang,
                alignment: .top)
-        .onChange(of: viewModel.state) { _, newState in
+        .onChange(of: viewModel.state) { oldState, newState in
             if newState == .collapsed { host?.setWantsKey(false) }
+            if oldState == .dropTargeting, newState == .expanded { selectedTab = .shelf }   // 셸프에 놓은 파일을 바로 보여 준다
         }
         .overlay(alignment: .top) {
             // 접힌 상태 드래그 진입 영역: 노치 좌우 32pt, 노치 높이만. alpha 0.001이라 WindowServer가 드래그를 우리 창에 전달한다.
@@ -103,21 +126,37 @@ struct NotchRootView: View {
         .onContinuousHover { phase in if case .active = phase { viewModel.resetIdle() } }
     }
 
+    /// 왼쪽 상단 탭 바 + 선택된 모듈 한 칸. 드롭 후에는 셸프 탭으로 전환한다(onChange).
     private var panes: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                (mediaPane ?? AnyView(placeholder("Media")))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                (shelfPane ?? AnyView(placeholder("Shelf")))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            HStack(spacing: 8) {
-                (clipboardPane ?? AnyView(placeholder("Clipboard")))
-                    .frame(height: Constants.clipboardRowHeight)
+        VStack(spacing: 6) {
+            HStack(spacing: 4) {
+                ForEach(NotchTab.allCases, id: \.self) { tab in
+                    Button { selectedTab = tab } label: {
+                        Label(tab.title, systemImage: tab.symbol)
+                            .font(.caption.weight(selectedTab == tab ? .semibold : .regular))
+                            .padding(.horizontal, 10)
+                            .frame(height: Constants.panelTabBarHeight)
+                            .background(Color.white.opacity(selectedTab == tab ? 0.16 : 0), in: Capsule())
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(selectedTab == tab ? .white : .secondary)
+                }
+                Spacer()
                 gearMenu
             }
+            pane(for: selectedTab)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(12)
+        .padding(10)
+    }
+
+    private func pane(for tab: NotchTab) -> AnyView {
+        switch tab {
+        case .media: mediaPane ?? AnyView(placeholder("Media"))
+        case .shelf: shelfPane ?? AnyView(placeholder("Shelf"))
+        case .clipboard: clipboardPane ?? AnyView(placeholder("Clipboard"))
+        }
     }
 
     private var gearMenu: some View {

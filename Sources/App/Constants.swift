@@ -9,8 +9,9 @@ enum Constants {
     static let toastDuration: TimeInterval = 3
     static let dragEnterMargin: CGFloat = 32
     static let virtualNotchWidth: CGFloat = 180
-    static let panelWidth: CGFloat = 560
-    static let panelBodyHeight: CGFloat = 190
+    static let panelWidth: CGFloat = 440
+    static let panelBodyHeight: CGFloat = 160
+    static let panelTabBarHeight: CGFloat = 24
     static let panelCornerRadius: CGFloat = 14
     static let collapsedCornerRadius: CGFloat = 8
     static let panelTopOverhang: CGFloat = 1
@@ -26,9 +27,6 @@ enum Constants {
     static let clipboardImageDirectoryName: String = "clipboard"
     static let clipboardMaxImageBytes: Int = 10_000_000
     static let clipboardPollInterval: TimeInterval = 0.75
-    static let clipboardChipCount: Int = 5
-    static let clipboardListHeight: CGFloat = 114
-    static let clipboardRowHeight: CGFloat = 44
     static let clipboardTitleMaxLength: Int = 60
     static let mediaPollInterval: TimeInterval = 2
     static let mediaScriptTimeout: TimeInterval = 3
@@ -37,8 +35,8 @@ enum Constants {
     static let mediaTickInterval: TimeInterval = 0.5
     static let mediaCommandRefreshDelay: TimeInterval = 0.5
     static let mediaArtworkMaxBytes: Int = 200_000
-    static let mediaArtworkTargetPixels: Int = 96
-    static let mediaArtworkSize: CGFloat = 44
+    static let mediaArtworkTargetPixels: Int = 144
+    static let mediaArtworkSize: CGFloat = 72
     static let mediaSeekBarHeight: CGFloat = 4
     static let mediaSeekHitHeight: CGFloat = 14
     static let youtubeMusicHost: String = "music.youtube.com"

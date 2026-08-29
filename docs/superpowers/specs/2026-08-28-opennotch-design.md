@@ -35,19 +35,23 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 - 펼침 애니메이션 스프링 0.35초. 앞 앱 포커스를 뺏지 않는다(`.nonactivatingPanel`). 클립보드 검색창 클릭 시에만 키 윈도우가 된다(`wantsKey`).
 - 전체화면 앱 위에서도 표시된다. "전체화면에서 숨김"은 v1.1 후보.
 
-### 3.3 펼친 패널 레이아웃 (탭 없음, 560×190pt)
+### 3.3 펼친 패널 레이아웃 (왼쪽 상단 탭, 440×160pt — 2026-08-29 개정)
 ```
 ┌──────────────────────────── 노치 ────────────────────────────┐
-│ [아트워크] 제목 / 채널        │  셸프 (썸네일 그리드, 최대 12)   │
-│  ◀◀  ▶/❚❚  ▶▶  ──진행──      │  비어 있으면 "파일을 끌어다 놓으세요" │
-│  YouTube Music · Safari       │  항목 우클릭: AirDrop / Finder에서 보기 / 미리보기 / 제거 │
-├──────────────────────────────┴──────────────────────────────┤
-│ 클립보드: [최근 항목 칩 ×5] [▸] [🔍 검색]            [⚙︎]      │
+│ [▶ 미디어] [AirDrop] [클립보드]                          [⚙︎] │
+├──────────────────────────────────────────────────────────────┤
+│ 미디어 탭: [아트워크 72] 제목                   [🌐 브라우저]  │
+│                       아티스트 · YouTube Music                │
+│                       ──────────진행 바──────────              │
+│                       0:42    ◀◀  ▶  ▶▶    3:15   ↗탭 열기    │
+│ AirDrop 탭: 셸프 썸네일 그리드(최대 12). 비어 있으면 "파일을 여기에 놓으세요" │
+│ 클립보드 탭: [🔍 검색] (개수) [🗑 → 전체 삭제] / 히스토리 목록      │
 └──────────────────────────────────────────────────────────────┘
 ```
+- 탭은 `NotchTab`(미디어·AirDrop·클립보드). 한 번에 한 모듈만 보여 높이를 190→160pt로 줄였다. 파일을 셸프에 놓으면 AirDrop 탭으로 자동 전환.
 - 드래그 진입 시 레이아웃이 **두 드롭존**으로 바뀐다: 왼쪽 "AirDrop", 오른쪽 "셸프에 보관". 드롭 위치로 동작 결정. 하나의 AppKit 드롭 뷰가 패널 전체를 덮고 `draggingUpdated`의 커서 위치로 존을 판정하므로 존 사이 이동에 exit 이벤트가 없다.
 - 미디어 칸: `mediaEnabled == false`면 안내 문구 + **[YouTube 제어 사용하기]** 버튼(첫 Apple Event는 이 버튼 뒤에서만 발생). 브라우저 JS 토글이 꺼져 있으면 읽기 전용 표시 + 브라우저별 안내 버튼. `MEDIA_ENABLED` 빌드가 아니면 칸 자체가 없고 셸프가 전체 폭을 쓴다.
-- 클립보드 행: 칩 5개(고정 44pt). [▸] 또는 검색창 포커스 시 전체 히스토리 목록이 **상단 두 칸 영역(114pt)을 정확히 덮는 overlay**로 펼쳐진다(패널 크기는 불변). 항목 우클릭: 삭제. "모두 지우기"는 설정에.
+- 클립보드 탭: 검색창 + 항목 개수 + 휴지통 메뉴(전체 삭제 — 되돌릴 수 없어 메뉴 한 단계 뒤). 아래는 전체 히스토리 목록(클릭 = 복사, 우클릭 = 삭제). 설정의 "히스토리 지우기"도 유지.
 - [⚙︎]: 메뉴바 아이콘과 같은 메뉴(설정… / OpenNotch 정보 / 종료) 팝업.
 
 ### 3.4 기능별 동작
@@ -116,7 +120,7 @@ OpenNotch/
 
 ### 4.4 노치 윈도우 (검증된 레시피)
 - `NotchPanel: NSPanel` — `styleMask [.borderless, .nonactivatingPanel]`, `isOpaque=false`, `backgroundColor=.clear`, `hasShadow=false`, `isMovable=false`, `hidesOnDeactivate=false`, `isReleasedWhenClosed=false`, `isFloatingPanel=true` **다음에** `level = .mainMenu + 3`, `collectionBehavior [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]`. 콘텐츠 뷰(NSHostingView 서브클래스)에서 `acceptsFirstMouse(for:) -> true`. `canBecomeKey`는 뷰모델 `wantsKey`일 때만 true. **`ignoresMouseEvents`는 절대 대입하지 않는다.**
-- 프레임: 항상 펼친 크기(560 × (노치높이+190))로 고정, 상단 = `screen.frame.maxY + 1`, 노치 중심 정렬. 접힘/펼침은 SwiftUI 모양 애니메이션만.
+- 프레임: 항상 펼친 크기(440 × (노치높이+160))로 고정, 상단 = `screen.frame.maxY + 1`, 노치 중심 정렬. 접힘/펼침은 SwiftUI 모양 애니메이션만.
 - 기하: `struct ScreenMetrics { frame, visibleFrame, safeAreaTop, auxLeftWidth, auxRightWidth, menuBarHeight }`(`NSScreen` 확장에서 변환, `menuBarHeight = NSStatusBar.system.thickness`). `NotchGeometry.notchRect(_ m: ScreenMetrics) -> (rect: CGRect, isVirtual: Bool)`: 실제 노치 `h = safeAreaTop`, `w = frame.width − auxLeftWidth − auxRightWidth`; 노치 없음이면 `h = max(frame.maxY − visibleFrame.maxY, menuBarHeight)`, `w = 180`.
 - 입력: 호버 = `NSTrackingArea [.mouseEnteredAndExited, .activeAlways, .inVisibleRect]`(`hoverToOpen` ON일 때만 의미); 클릭 = 콘텐츠 뷰 `mouseDown`; 바깥 클릭 = 전역 `.leftMouseDown/.rightMouseDown` + 로컬 모니터 쌍; Esc = `wantsKey` 중 로컬 `.keyDown` 모니터. 드래그 = `DropZoneView`(AppKit `NSDraggingDestination`, `registerForDraggedTypes([.fileURL])`, 접힌 상태에서는 노치+32pt만 hit, 펼친 상태에서는 패널 전체). URL 읽기는 `performDragOperation`에서만 `draggingPasteboard.readObjects(forClasses: [NSURL.self])`. `draggingEntered`→`dragEnter`, `draggingExited`/`draggingEnded`(드롭 없이)→`dragExit`, 드래그 소스가 자체 셸프면 무시. 전부 권한 불필요.
 - 화면 변경: `NSApplication.didChangeScreenParametersNotification` → 대상 화면 재선택·프레임 재계산. `NSScreenNumber`+frame 동일하면 무시.
@@ -174,8 +178,8 @@ init(clock: any Clock<Duration> = ContinuousClock())
 - 사이트 배지는 텍스트("YouTube Music")만. YouTube 로고 에셋을 번들에 넣지 않는다.
 
 ### 4.9 설정 키 (`Preferences.swift`, `@AppStorage`)
-`hoverToOpen`(false) · `launchAtLogin`(false, `SMAppService.status`와 동기화) · `showMenuBarIcon`(true) · `hotkeyEnabled`(true) · `showVirtualNotch`(true) · `clipboardEnabled`(true) · `clipboardLimit`(100) · `firstLaunchDone`(false) · [MEDIA] `mediaEnabled`(false) · `disabledBrowsers`("" — 끈 브라우저 번들 ID를 쉼표로 이은 문자열, `@AppStorage` 호환)
-수치 상수(`Constants.swift`): 호버 지연 0.4s, 호버 이탈 0.3s, 유휴 6s, 드래그 진입 여유 32pt, 가상 노치 폭 180pt, 패널 560×190, 셸프 상한 12, 폴링 2s, 스크립트 타임아웃 3s, 이미지 상한 10MB, 아트워크 상한 48KB.
+`hoverToOpen`(true) · `launchAtLogin`(false, `SMAppService.status`와 동기화) · `showMenuBarIcon`(true) · `hotkeyEnabled`(true) · `showVirtualNotch`(true) · `clipboardEnabled`(true) · `clipboardLimit`(100) · `firstLaunchDone`(false) · [MEDIA] `mediaEnabled`(true) · `disabledBrowsers`("" — 끈 브라우저 번들 ID를 쉼표로 이은 문자열, `@AppStorage` 호환)
+수치 상수(`Constants.swift`): 호버 지연 0.4s, 호버 이탈 0.3s, 유휴 6s, 드래그 진입 여유 32pt, 가상 노치 폭 180pt, 패널 440×160, 셸프 상한 12, 폴링 2s, 스크립트 타임아웃 3s, 이미지 상한 10MB, 아트워크 상한 48KB.
 
 ### 4.10 App Store 패키징
 - Info.plist: `LSUIElement=YES`, `LSMinimumSystemVersion=14.0`, `LSApplicationCategoryType=public.app-category.utilities`, `NSHumanReadableCopyright`, `ITSAppUsesNonExemptEncryption=NO`, `CFBundleDisplayName=OpenNotch`, [MEDIA] `NSAppleEventsUsageDescription`.

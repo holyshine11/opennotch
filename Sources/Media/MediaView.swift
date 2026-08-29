@@ -35,36 +35,51 @@ struct MediaView: View {
         }
     }
 
+    /// 탭 전체 폭을 쓴다: 아트워크 | 제목·아티스트(오른쪽에 브라우저 배지) / 진행 바 / 시간·재생 버튼·시간·탭 열기.
     private func nowPlayingView(_ np: NowPlaying) -> some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: 12) {
             artwork(np)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(np.title).font(.caption.bold()).lineLimit(1)
-                HStack(spacing: 4) {
-                    Text(np.artist ?? np.siteName).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(np.title).font(.callout.bold()).lineLimit(1)
+                    Spacer(minLength: 4)
                     if let name = controller.sourceName {
-                        Spacer(minLength: 2)
                         // 어느 브라우저를 제어 중인지 항상 보여 준다. 후보가 둘 이상이면 눌러서 전환.
                         Button { controller.cycleSource() } label: {
                             Label(name, systemImage: controller.sourceCount > 1 ? "arrow.left.arrow.right" : "globe").font(.caption2)
-                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Color.white.opacity(0.12), in: Capsule())
                         }
                         .buttonStyle(.plain).disabled(controller.sourceCount < 2).help("Switch browser")
                     }
                 }
-                HStack(spacing: 14) {
-                    control("backward.fill") { controller.send(.prev) }
-                    control(np.playing ? "pause.fill" : "play.fill") { controller.send(np.playing ? .pause : .play) }
-                    control("forward.fill") { controller.send(.next) }
+                Text([np.artist, np.siteName].compactMap { $0 }.joined(separator: " · "))
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Spacer(minLength: 2)
+                seekBar(np)
+                HStack(spacing: 0) {
+                    timeLabel(np.position)
                     Spacer()
-                    control("arrow.up.forward.app") { reveal() }
+                    HStack(spacing: 22) {
+                        control("backward.fill") { controller.send(.prev) }
+                        control(np.playing ? "pause.fill" : "play.fill", font: .title2) { controller.send(np.playing ? .pause : .play) }
+                        control("forward.fill") { controller.send(.next) }
+                    }
+                    Spacer()
+                    timeLabel(np.duration)
+                    control("arrow.up.forward.app", font: .caption) { reveal() }
+                        .foregroundStyle(.secondary).padding(.leading, 10)
                         .help("Show tab in browser")
                 }
-                .padding(.top, 2)
-                seekBar(np)
             }
         }
+    }
+
+    private func timeLabel(_ seconds: Double) -> some View {
+        let total = max(Int(seconds.rounded()), 0)
+        let text = total >= 3600 ? String(format: "%d:%02d:%02d", total / 3600, total / 60 % 60, total % 60)
+                                 : String(format: "%d:%02d", total / 60, total % 60)
+        return Text(text).font(.caption2).foregroundStyle(.secondary).monospacedDigit()
     }
 
     private func seekBar(_ np: NowPlaying) -> some View {
@@ -87,8 +102,8 @@ struct MediaView: View {
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
-    private func control(_ symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.body) }
+    private func control(_ symbol: String, font: Font = .body, action: @escaping () -> Void) -> some View {
+        Button(action: action) { Image(systemName: symbol).font(font) }
             .buttonStyle(.plain)
     }
 

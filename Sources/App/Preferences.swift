@@ -16,7 +16,7 @@ enum PrefKey {
 
     static func registerDefaults(_ defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
-            hoverToOpen: false,
+            hoverToOpen: true,
             launchAtLogin: false,
             showMenuBarIcon: true,
             hotkeyEnabled: true,
@@ -24,7 +24,7 @@ enum PrefKey {
             clipboardEnabled: true,
             clipboardLimit: Constants.clipboardDefaultLimit,
             firstLaunchDone: false,
-            mediaEnabled: false,
+            mediaEnabled: true,
             disabledBrowsers: "",
         ])
     }

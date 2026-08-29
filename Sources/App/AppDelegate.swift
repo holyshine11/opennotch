@@ -101,7 +101,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showMediaSetup() {
         guard let mediaController else { return }
         if mediaSetupWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: MediaSetupGuideView(controller: mediaController)))
+            let hosting = NSHostingController(rootView: MediaSetupGuideView(controller: mediaController))
+            hosting.sizingOptions = .preferredContentSize   // 창 높이 = 내용 높이(스크롤 없음)
+            let window = NSWindow(contentViewController: hosting)
             window.title = String(localized: "YouTube controls setup")
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false

@@ -14,14 +14,14 @@ struct SettingsView: View {
 }
 
 struct GeneralSettingsView: View {
-    @AppStorage(PrefKey.hoverToOpen) private var hoverToOpen = false
+    @AppStorage(PrefKey.hoverToOpen) private var hoverToOpen = true
     @AppStorage(PrefKey.launchAtLogin) private var launchAtLogin = false
     @AppStorage(PrefKey.showMenuBarIcon) private var showMenuBarIcon = true
     @AppStorage(PrefKey.hotkeyEnabled) private var hotkeyEnabled = true
     @AppStorage(PrefKey.showVirtualNotch) private var showVirtualNotch = true
     @AppStorage(PrefKey.clipboardEnabled) private var clipboardEnabled = true
     @AppStorage(PrefKey.clipboardLimit) private var clipboardLimit = Constants.clipboardDefaultLimit
-    @AppStorage(PrefKey.mediaEnabled) private var mediaEnabled = false
+    @AppStorage(PrefKey.mediaEnabled) private var mediaEnabled = true
     @AppStorage(PrefKey.disabledBrowsers) private var disabledBrowsers = ""
     @State private var confirmHideIcon = false
     @State private var launchError: String?
@@ -64,7 +64,7 @@ struct GeneralSettingsView: View {
                     Toggle(browser.displayName, isOn: browserBinding(browser)).disabled(!mediaEnabled)
                 }
                 Button("Setup guide…") { NotificationCenter.default.post(name: .openNotchShowMediaSetup, object: nil) }
-                Text("Controls need “Allow JavaScript from Apple Events” in the browser. The guide shows where it is and whether it’s on.")
+                Text("Needs a one-time browser setting. The guide shows where.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             #endif
