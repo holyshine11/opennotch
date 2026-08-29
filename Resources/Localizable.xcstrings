@@ -769,12 +769,12 @@
         }
       }
     },
-    "Opening %@’s menu…": {
+    "Opening %@’s menu… If macOS asks to allow control of System Events, click Allow.": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 메뉴를 여는 중…"
+            "value": "%@ 메뉴를 여는 중… macOS가 System Events 제어를 허용할지 물어보면 ‘허용’을 누르세요."
           }
         }
       }
@@ -1165,6 +1165,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "노치가 패널이 됩니다."
+          }
+        }
+      }
+    },
+    "macOS blocked OpenNotch from asking System Events to open the menu. Turn on System Events under OpenNotch in Privacy & Security › Automation, then try again.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS가 OpenNotch의 System Events 사용을 막았습니다. 개인정보 보호 및 보안 › 자동화에서 OpenNotch 아래 System Events를 켠 뒤 다시 시도하세요."
           }
         }
       }

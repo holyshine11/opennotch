@@ -9,7 +9,7 @@ extension Notification.Name {
 
 /// "메뉴 열어 주기"를 누른 뒤 카드가 지나가는 단계. 뷰 안에서만 쓴다.
 private enum AssistPhase: Equatable {
-    case consent, waitingForPermission, running, clickTheItem, done, failed
+    case consent, waitingForPermission, running, clickTheItem, done, failed, automationDenied
 }
 
 /// 처음 쓰는 사람을 위한 한 화면 안내. 브라우저마다 지금 상태와 다음에 할 일 하나(탭 열기 / 메뉴 켜기 / 권한 열기)를 같이 보여 주고,
@@ -198,7 +198,7 @@ struct MediaSetupGuideView: View {
         case .running:
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
-                Text("Opening \(browser.displayName)’s menu…").font(.callout)
+                Text("Opening \(browser.displayName)’s menu… If macOS asks to allow control of System Events, click Allow.").font(.callout)
             }
         case .clickTheItem:
             VStack(alignment: .leading, spacing: 8) {
@@ -211,6 +211,19 @@ struct MediaSetupGuideView: View {
         case .failed:
             VStack(alignment: .leading, spacing: 8) {
                 Text("Couldn’t find the menu item — please open it yourself:").font(.callout)
+                menuPath(browser, ready: false)
+            }
+        case .automationDenied:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("macOS blocked OpenNotch from asking System Events to open the menu. Turn on System Events under OpenNotch in Privacy & Security › Automation, then try again.")
+                    .font(.callout)
+                HStack(spacing: 12) {
+                    Button("Open System Settings") {
+                        if let url = URL(string: Constants.automationPrivacySettingsURL) { NSWorkspace.shared.open(url) }
+                    }
+                    Button("I’ll do it myself") { assist[browser] = nil }
+                }
+                .buttonStyle(.link)
                 menuPath(browser, ready: false)
             }
         }
@@ -232,6 +245,7 @@ struct MediaSetupGuideView: View {
             return
         case .notFound: assist[browser] = .failed
         case .noPermission: assist[browser] = .consent
+        case .automationDenied: assist[browser] = .automationDenied
         }
         controller.poll()
     }

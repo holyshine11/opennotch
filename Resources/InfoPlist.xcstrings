@@ -6,7 +6,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "열어 둔 YouTube·Spotify 탭과 Music 앱의 재생 정보를 읽고 재생/일시정지를 실행하기 위해 접근합니다."
+            "value": "열어 둔 YouTube·Spotify 탭과 Music 앱의 재생 정보를 읽고 재생/일시정지를 실행하기 위해 접근합니다. 설정 중에는 요청하실 때만 System Events로 브라우저의 개발자 메뉴를 대신 열어 드립니다."
           }
         }
       }
