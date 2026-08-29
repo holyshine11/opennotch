@@ -246,8 +246,11 @@ struct MediaSetupGuideView: View {
         case .alreadyOn, .turnedOn:
             assist[browser] = .done
             bringGuideWindowFront()
-            // 초록 체크는 다음 probe가 올린다. 그래도 안 오면(탭이 닫혔거나 probe 실패) 카드를 되돌려 버튼을 다시 보여 준다.
+            // 초록 체크는 다음 probe가 올린다. 확인할 YouTube 탭이 없으면 하나 열어 준다(스위치를 켠 뒤 탭이 없어 영원히 안 바뀌던 문제).
+            // 그래도 안 오면 카드를 되돌려 버튼을 다시 보여 준다.
             Task {
+                try? await Task.sleep(for: .seconds(Constants.mediaPollInterval))
+                if assist[browser] == .done, controller.setupStatus(browser) == .noTab { browser.openCheckPage() }
                 try? await Task.sleep(for: .seconds(Constants.assistConfirmDelay))
                 if assist[browser] == .done { assist[browser] = nil }
             }

@@ -4,12 +4,14 @@ import AppKit
 enum BrowserSetupStatus: Equatable, Sendable {
     case ready, jsOff, permissionDenied, noTab, notRunning
 
+    /// 꺼진 브라우저는 옛 JS 판정보다 "실행 중 아님"이 먼저다(켜져 있어야 확인·조작이 되므로).
     static func derive(jsReady: Bool?, denied: Bool, running: Bool) -> BrowserSetupStatus {
         if denied { return .permissionDenied }
+        guard running else { return .notRunning }
         switch jsReady {
         case true?: return .ready
         case false?: return .jsOff
-        default: return running ? .noTab : .notRunning
+        default: return .noTab
         }
     }
 }

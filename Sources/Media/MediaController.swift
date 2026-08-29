@@ -197,6 +197,8 @@ final class MediaController {
                 switch await AppleScriptRunner.run(MediaScript.probe(browser: browser, prefer: current.flatMap { $0.browser == browser ? (window: $0.window, tab: $0.tab) : nil }), timeout: Constants.mediaScriptTimeout) {
                 case .success(let out):
                     deniedBrowsers.remove(browser)
+                    // 탭이 없어졌으면 이전 JS 판정도 지운다 — 안내 창이 옛 결과로 "메뉴를 켜세요"를 보여 주지 않게(2026-08-29 Safari 실기).
+                    if MediaScript.parseProbe(out) == nil { jsReady[browser] = nil }
                     if let probe = MediaScript.parseProbe(out) {
                         found.append(Candidate(browser: browser, probe: probe, at: Date()))
                         if let code = probe.jsErrorCode {
