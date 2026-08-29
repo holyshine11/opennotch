@@ -92,12 +92,12 @@ Used to show the current Apple Music track (name, artist, duration, position, ar
 - [x] 개인정보 URL 200 응답: https://holyshine11.github.io/opennotch/privacy (GitHub Pages, main:/docs — **경로는 소문자**)
 - [x] 스크린샷 3장(`docs/appstore/screenshots/`)
 - [x] PrivacyInfo.xcprivacy: 수집 없음
-- [ ] **App Store Connect에 앱 생성** — 사용자 계정으로 https://appstoreconnect.apple.com › 나의 앱 › + › 신규 앱: 플랫폼 macOS, 이름 `OpenNotch`, 기본 언어 한국어, 번들 ID `com.holyshine11.opennotch`(Xcode 자동 서명으로 이미 등록됨), SKU `opennotch-mac`
-- [ ] **빌드 업로드** — 앱 레코드를 만든 뒤 터미널에서 (Xcode 계정 세션 사용):
+- [x] App Store Connect 앱 생성 — **Apple ID 6806510254**, https://appstoreconnect.apple.com/apps/6806510254/distribution (이름 `OpenNotch`, SKU `opennotch-mac`, 기본 언어 한국어 + 영어(미국))
+- [x] 빌드 1.0.0 (1) 업로드·처리·선택 완료 (2026-08-29). 재업로드 시 CFBundleVersion을 올리고 같은 명령:
   `xcodebuild -exportArchive -archivePath build/OpenNotch.xcarchive -exportOptionsPlist <UploadOptions.plist> -exportPath build/upload -allowProvisioningUpdates`
   (`UploadOptions.plist` = method `app-store-connect`, destination `upload`, teamID `MWC6DSJWJR`, signingStyle `automatic`. 또는 Transporter 앱에 `build/export/OpenNotch.pkg`를 끌어다 놓기)
-- [ ] 1절 기본 정보·2절 설명(ko/en)·키워드 입력, 카테고리 유틸리티, 가격 무료
-- [ ] 앱 개인정보(Data Not Collected), 연령 등급(6절), 저작권
-- [ ] 3절 Entitlement Usage Information + 4절 Review Notes를 "심사 정보 › 메모"에 붙여 넣기
-- [ ] 스크린샷 업로드 → 빌드 선택 → 심사 제출
+- [x] 1절 기본 정보·2절 설명(ko/en)·키워드 입력, 카테고리 유틸리티/생산성, 가격 무료·175개국
+- [x] 앱 개인정보(데이터 수집 안 함, 게시됨), 연령 등급 4+, 저작권
+- [x] 심사 정보: 연락처 + 영어 메모(3,752자 — 앱 위치·60초 테스트·읽기 전용 설명·엔타이틀먼트 5개 용도·개인정보)
+- [x] 스크린샷 3장 업로드 → 빌드 선택 → **심사 제출 완료: 2026-08-29, 상태 "1.0.0 심사 대기 중(Waiting for Review)"**
 - 반려 대비: `com.apple.systemevents` 예외가 문제면 SetupAssistant 관련 커밋(6622dec 이후)을 되돌리고 entitlements에서 그 한 줄을 지운 뒤 재제출 — 환영 창의 수동 안내는 그대로 남는다.
