@@ -1,5 +1,7 @@
 # OpenNotch
 
+**정말 무료입니다.** 인앱 구매·구독·잠긴 ‘프로’ 기능 없음 — 음악 제어를 포함한 모든 기능이 무료이고, 소스도 공개되어 있습니다.
+
 A free, open-source utility that turns the MacBook notch into a tiny control center — AirDrop drop zone, YouTube / YouTube Music controls, clipboard history, and a file shelf. Sandboxed, no private APIs, built for the Mac App Store.
 
 ## Status

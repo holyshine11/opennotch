@@ -6,8 +6,8 @@ App Store Connect에 붙여 넣을 텍스트와 체크리스트. 스펙 §4.10 �
 | 항목 | 값 |
 |---|---|
 | 이름 | OpenNotch |
-| 부제(ko) | 노치에서 AirDrop·클립보드·YouTube |
-| 부제(en) | AirDrop, clipboard & YouTube in your notch |
+| 부제(ko) | 무료 노치 패널 — AirDrop·클립보드·음악 |
+| 부제(en) | Free notch panel with music |
 | 번들 ID | com.holyshine11.opennotch |
 | 카테고리 | 유틸리티 (public.app-category.utilities) |
 | 가격 | 무료 |
@@ -16,13 +16,15 @@ App Store Connect에 붙여 넣을 텍스트와 체크리스트. 스펙 §4.10 �
 | 개인정보 처리방침 URL | https://holyshine11.github.io/opennotch/privacy (GitHub Pages — 아래 5절) |
 | 저작권 | © 2026 holyshine11. MIT License. |
 
-키워드(ko, 100자 이내): `노치,AirDrop,클립보드,유튜브,YouTube Music,셸프,파일,드롭,메뉴바,맥북`
-키워드(en): `notch,airdrop,clipboard,youtube,youtube music,shelf,file drop,menu bar,macbook`
+키워드(ko, 100자 이내): `무료,노치,AirDrop,클립보드,유튜브,YouTube Music,셸프,파일,드롭,메뉴바,맥북`
+키워드(en): `free,notch,airdrop,clipboard,youtube,youtube music,shelf,file drop,menu bar,macbook`
 ※ 부제·키워드에 "Dynamic Island" 사용 금지.
 
 ## 2. 설명
 
 ### ko
+정말 무료입니다. 인앱 구매도, 구독도, 잠겨 있는 ‘프로’ 기능도 없습니다 — 음악 제어를 포함한 모든 기능을 처음부터 끝까지 무료로 쓸 수 있습니다. 소스 코드도 공개되어 있습니다.
+
 OpenNotch는 MacBook 노치를 작은 제어 센터로 바꿔 주는 무료 오픈 소스 앱입니다. 노치를 클릭하거나 파일을 끌어오면 패널이 펼쳐집니다.
 
 • AirDrop — 파일을 노치로 끌어다 놓으면 바로 AirDrop 보내기 창이 열립니다.
@@ -35,6 +37,8 @@ OpenNotch는 MacBook 노치를 작은 제어 센터로 바꿔 주는 무료 오�
 네트워크 통신·분석·계정이 전혀 없습니다. 모든 데이터는 이 Mac에만 저장됩니다. 소스 코드는 GitHub에 MIT 라이선스로 공개되어 있습니다.
 
 ### en
+Really free. No in-app purchases, no subscription, no locked “Pro” features — everything, including the music controls, is free from the first launch. The source code is public, too.
+
 OpenNotch turns the MacBook notch into a tiny control center. Click the notch or drag a file onto it and a panel unfolds.
 
 • AirDrop — drop a file on the notch to open the AirDrop sender right away.
@@ -45,6 +49,9 @@ OpenNotch turns the MacBook notch into a tiny control center. Click the notch or
 On Macs without a notch a virtual notch appears in the middle of the menu bar. The global shortcut ⌃⌥N also opens the panel.
 
 No network, no analytics, no accounts. Everything stays on this Mac. Free and open source (MIT) on GitHub.
+
+프로모션 텍스트(ko): `정말 무료입니다 — 인앱 구매·구독·잠긴 기능 없음. 음악 제어까지 전부 무료. AirDrop·셸프·클립보드 기록·음악 제어가 노치 한 화면에. 오픈 소스, 네트워크 없음.`
+프로모션 텍스트(en): `Really free — no in-app purchases, no subscription, no locked features. Music controls included. AirDrop, file shelf, clipboard history and music in one notch panel.`
 
 ## 3. Entitlement Usage Information (심사용, en)
 **com.apple.security.temporary-exception.apple-events** — targets: `com.apple.Safari`, `com.google.Chrome`, `com.microsoft.edgemac`, `company.thebrowser.Browser`, `com.brave.Browser`, `com.naver.Whale`, `com.apple.systemevents`.
