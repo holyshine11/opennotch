@@ -51,6 +51,16 @@
         }
       }
     },
+    "Add OpenNotch to System Settings › Privacy & Security › Accessibility and turn it on — this continues by itself.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용 목록에 OpenNotch를 추가하고 켜세요 — 켜는 즉시 이어서 진행됩니다."
+          }
+        }
+      }
+    },
     "AirDrop": {
       "localizations": {
         "ko": {
@@ -223,6 +233,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "기록 지우기"
+          }
+        }
+      }
+    },
+    "Click + under the list and pick OpenNotch in Applications, or drag OpenNotch from Finder onto the list.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "목록 아래 + 를 눌러 응용 프로그램에서 OpenNotch를 고르거나, Finder에서 OpenNotch를 목록으로 끌어다 놓으세요."
           }
         }
       }
@@ -949,6 +969,16 @@
         }
       }
     },
+    "Show OpenNotch in Finder": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder에서 OpenNotch 보기"
+          }
+        }
+      }
+    },
     "Show all": {
       "localizations": {
         "ko": {
@@ -1049,16 +1079,6 @@
         }
       }
     },
-    "Turn on OpenNotch in System Settings › Privacy & Security › Accessibility — this continues by itself.": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 OpenNotch를 켜세요 — 켜는 즉시 이어서 진행됩니다."
-          }
-        }
-      }
-    },
     "Turn on the menu item below": {
       "localizations": {
         "ko": {
@@ -1145,6 +1165,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "노치가 패널이 됩니다."
+          }
+        }
+      }
+    },
+    "macOS doesn’t ask for this one automatically — you add OpenNotch to the list yourself. The next step shows where.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 권한은 macOS가 자동으로 물어보지 않아 목록에 OpenNotch를 직접 추가해야 합니다. 다음 단계에서 위치를 보여 드립니다."
           }
         }
       }

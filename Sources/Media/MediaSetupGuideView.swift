@@ -166,9 +166,14 @@ struct MediaSetupGuideView: View {
                     .font(.callout)
                 Text("It is used only to open this menu — nothing on your screen is read or recorded, and you can turn it off any time in System Settings.")
                     .font(.caption).foregroundStyle(.secondary)
+                Text("macOS doesn’t ask for this one automatically — you add OpenNotch to the list yourself. The next step shows where.")
+                    .font(.caption).foregroundStyle(.secondary)
                 HStack(spacing: 12) {
                     Button("Allow…") {
+                        // 샌드박스 앱에는 손쉬운 사용 프롬프트가 뜨지 않는다(2026-08-29 실측, MAS의 Magnet·Moom도 같은 안내).
+                        // 혹시 뜨는 환경을 위해 요청은 하되, 설정 화면을 바로 열어 목록에 직접 추가하게 한다.
                         SetupAssistant.requestPermission()
+                        openAccessibilitySettings()
                         assist[browser] = .waitingForPermission
                     }
                     .buttonStyle(.borderedProminent)
@@ -179,11 +184,14 @@ struct MediaSetupGuideView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text("Turn on OpenNotch in System Settings › Privacy & Security › Accessibility — this continues by itself.")
+                    Text("Add OpenNotch to System Settings › Privacy & Security › Accessibility and turn it on — this continues by itself.")
                         .font(.callout)
                 }
-                Button("Open System Settings") {
-                    if let url = URL(string: Constants.accessibilityPrivacySettingsURL) { NSWorkspace.shared.open(url) }
+                Text("Click + under the list and pick OpenNotch in Applications, or drag OpenNotch from Finder onto the list.")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Button("Open System Settings") { openAccessibilitySettings() }
+                    Button("Show OpenNotch in Finder") { NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL]) }
                 }
                 .buttonStyle(.link)
             }
@@ -206,6 +214,10 @@ struct MediaSetupGuideView: View {
                 menuPath(browser, ready: false)
             }
         }
+    }
+
+    private func openAccessibilitySettings() {
+        if let url = URL(string: Constants.accessibilityPrivacySettingsURL) { NSWorkspace.shared.open(url) }
     }
 
     /// 도우미를 한 번 돌리고 결과를 단계로 옮긴다. 바로 probe해서 체크가 1초 안에 초록이 되게 한다.
