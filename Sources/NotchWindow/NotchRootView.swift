@@ -1,0 +1,225 @@
+import SwiftUI
+
+/// 펼친 패널의 왼쪽 상단 탭. 모듈 하나만 보여 화면을 덜 차지한다.
+enum NotchTab: CaseIterable {
+    case media, shelf, clipboard
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .media: "Media"
+        case .shelf: "AirDrop"
+        case .clipboard: "Clipboard"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .media: "play.circle"
+        case .shelf: "square.and.arrow.up.circle"
+        case .clipboard: "doc.on.clipboard"
+        }
+    }
+}
+
+/// 패널 콘텐츠. 좌표계는 SwiftUI(원점 좌상단), 크기 = 패널 frame.
+struct NotchRootView: View {
+    let viewModel: NotchViewModel
+    let toast: ToastCenter
+    let notch: NotchRect          // 화면 좌표 — 여기서는 크기만 쓴다
+    let badge: NotchBadge
+    /// 가상 노치 표시가 꺼졌을 때 접힌 검은 모양과 드래그 진입 밴드를 숨긴다(§3.1). 펼침에는 영향 없다.
+    var hideCollapsedShape: Bool = false
+    /// 모듈 뷰는 P2~P4에서 주입된다. nil이면 자리 표시.
+    var mediaPane: AnyView?
+    var shelfPane: AnyView?
+    var clipboardPane: AnyView?
+
+    @Environment(\.openSettings) private var openSettings
+    @State private var selectedTab: NotchTab = .media
+    @Environment(\.notchHost) private var host
+
+    private var isOpen: Bool { viewModel.state != .collapsed }
+    private var notchHeight: CGFloat { notch.rect.height }
+    private var showsCollapsedVisuals: Bool { isOpen || !hideCollapsedShape }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Color.clear.frame(height: Constants.panelTopOverhang)
+            ZStack(alignment: .top) {
+                shape
+                if isOpen {
+                    content
+                        .frame(width: Constants.panelWidth, height: notchHeight + Constants.panelBodyHeight)
+                        .transition(.opacity)
+                }
+            }
+            .frame(width: isOpen ? Constants.panelWidth : notch.rect.width,
+                   height: isOpen ? notchHeight + Constants.panelBodyHeight : notchHeight)
+            .contentShape(NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : Constants.collapsedCornerRadius))
+            .allowsHitTesting(showsCollapsedVisuals)
+            .onTapGesture(coordinateSpace: .local) { location in
+                guard showsCollapsedVisuals else { return }
+                // 펼친 상태에서는 노치 자체(가운데)만 접기 — 좌우 날개에는 탭·기어가 있다.
+                if !isOpen || (location.y <= notchHeight && abs(location.x - Constants.panelWidth / 2) <= notch.rect.width / 2) {
+                    viewModel.send(.clickNotch)
+                }
+            }
+            .onHover { inside in
+                guard showsCollapsedVisuals else { return }
+                viewModel.send(inside ? .hoverEnter : .hoverExit)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(width: Constants.panelWidth,
+               height: notchHeight + Constants.panelBodyHeight + Constants.panelTopOverhang,
+               alignment: .top)
+        .onChange(of: viewModel.state) { oldState, newState in
+            if newState == .collapsed { host?.setWantsKey(false) }
+            if oldState == .dropTargeting, newState == .expanded { selectedTab = .shelf }   // 셸프에 놓은 파일을 바로 보여 준다
+        }
+        .overlay(alignment: .top) {
+            // 접힌 상태 드래그 진입 영역: 노치 좌우 32pt, 노치 높이만. alpha 0.001이라 WindowServer가 드래그를 우리 창에 전달한다.
+            // 가상 노치가 꺼지면(hideCollapsedShape) 진입 밴드도 함께 숨긴다 — §3.1 "끄면 메뉴바 아이콘·단축키로만 연다".
+            if !isOpen && showsCollapsedVisuals {
+                Color.black.opacity(0.001)
+                    .frame(width: notch.rect.width + Constants.dragEnterMargin * 2, height: notchHeight)
+                    .padding(.top, Constants.panelTopOverhang)
+                    .allowsHitTesting(false)
+            }
+        }
+        .animation(.spring(duration: Constants.expandAnimationDuration), value: viewModel.state)
+        .overlay(alignment: .bottom) {
+            if isOpen {
+                ToastView(center: toast).padding(.bottom, 8)
+                    .animation(.easeInOut(duration: 0.2), value: toast.message)
+            }
+        }
+    }
+
+    private var shape: some View {
+        NotchShape(bottomRadius: isOpen ? Constants.panelCornerRadius : Constants.collapsedCornerRadius)
+            .fill(Color.black)
+            .opacity(showsCollapsedVisuals ? 1 : 0)
+            .overlay(alignment: .trailing) {
+                // 접힌 상태 오른쪽 날개: 셸프 개수. 검은 불투명이라 alpha-0 규칙과 무관.
+                if !isOpen, badge.shelfCount > 0, showsCollapsedVisuals {
+                    Text("\(badge.shelfCount)")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: Constants.shelfWingWidth, height: notchHeight)
+                        .background(NotchShape(bottomRadius: Constants.collapsedCornerRadius).fill(Color.black))
+                        .offset(x: Constants.shelfWingWidth)
+                        .contentShape(Rectangle())
+                        .onTapGesture { viewModel.send(.clickNotch) }
+                }
+            }
+    }
+
+    @ViewBuilder private var content: some View {
+        VStack(spacing: 0) {
+            notchBand
+            if viewModel.state == .dropTargeting {
+                dropZones
+            } else {
+                panes
+            }
+        }
+        .foregroundStyle(.white)
+        .simultaneousGesture(TapGesture().onEnded { viewModel.resetIdle() })
+        .onContinuousHover { phase in if case .active = phase { viewModel.resetIdle() } }
+    }
+
+    /// 노치 밴드: 왼쪽 날개에 탭(아이콘), 오른쪽 날개에 기어. 가운데(노치)는 클릭하면 접힌다(부모 ZStack의 탭 제스처).
+    private var notchBand: some View {
+        let wing = (Constants.panelWidth - notch.rect.width) / 2
+        return HStack(spacing: 0) {
+            HStack(spacing: 4) {
+                ForEach(NotchTab.allCases, id: \.self) { tab in
+                    Button { selectedTab = tab } label: {
+                        Image(systemName: tab.symbol)
+                            .font(.system(size: 13, weight: selectedTab == tab ? .semibold : .regular))
+                            .frame(width: Constants.panelTabBarHeight + 4, height: Constants.panelTabBarHeight)
+                            .background(Color.white.opacity(selectedTab == tab ? 0.16 : 0), in: Capsule())
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(selectedTab == tab ? .white : .secondary)
+                    .help(tab.title)
+                }
+            }
+            .padding(.leading, 10)
+            .frame(width: wing, alignment: .leading)
+            Color.clear.frame(width: notch.rect.width)
+            gearMenu
+                .padding(.trailing, 10)
+                .frame(width: wing, alignment: .trailing)
+        }
+        .frame(height: notchHeight)
+    }
+
+    /// 선택된 모듈 한 칸이 본문 전체를 쓴다. 드롭 후에는 셸프 탭으로 전환한다(onChange).
+    private var panes: some View {
+        pane(for: selectedTab)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 10)
+            .padding(.top, 6)
+    }
+
+    private func pane(for tab: NotchTab) -> AnyView {
+        switch tab {
+        case .media: mediaPane ?? AnyView(placeholder("Media"))
+        case .shelf: shelfPane ?? AnyView(placeholder("Shelf"))
+        case .clipboard: clipboardPane ?? AnyView(placeholder("Clipboard"))
+        }
+    }
+
+    private var gearMenu: some View {
+        Menu {
+            Button("Settings…") {
+                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
+            }
+            #if MEDIA_ENABLED
+            Button("Music controls setup…") {
+                NotificationCenter.default.post(name: .openNotchShowMediaSetup, object: nil)
+            }
+            #endif
+            Button("About OpenNotch") {
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.orderFrontStandardAboutPanel(nil)
+            }
+            Divider()
+            Button("Quit OpenNotch") { NSApp.terminate(nil) }
+        } label: {
+            Image(systemName: "gearshape")
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Settings")
+    }
+
+    private var dropZones: some View {
+        HStack(spacing: 8) {
+            dropZoneLabel("AirDrop", systemImage: "airplayaudio")
+            dropZoneLabel("Keep in Shelf", systemImage: "tray.and.arrow.down")
+        }
+        .padding(12)
+    }
+
+    private func dropZoneLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemImage).font(.title)
+            Text(title).font(.headline)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func placeholder(_ title: LocalizedStringKey) -> some View {
+        Text(title).font(.caption).foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+    }
+}

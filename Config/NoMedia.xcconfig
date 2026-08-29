@@ -1,0 +1,2 @@
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited)
+CODE_SIGN_ENTITLEMENTS = OpenNotch-NoMedia.entitlements

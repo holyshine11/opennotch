@@ -1,6 +1,6 @@
-# OpenNotch 설계 스펙 (v1.1)
+# OpenNotch 설계 스펙 (v1.6)
 
-작성 2026-08-28 · 상태: 사용자 검토 대기 · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md` · v1.0 → v1.1: 3렌즈(일관성·App Store·YAGNI) 반박 리뷰 반영
+작성 2026-08-28 · 상태: 승인됨(v1.1) → v1.2는 P1 최종 리뷰 반영(드롭 거절 이벤트·reopen·클립보드 확장·가상 노치 숨김) · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md` · v1.3: P2 구현에 맞춰 §4.3·§4.6 갱신(셸프 access 유지 모델, 서비스 시그니처)
 
 ## 1. 한 줄 정의
 
@@ -19,6 +19,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 | D7 | 저장소 | GitHub 공개, `main` 브랜치, 기능별 브랜치 → PR |
 | D8 | 코드 출처 | 참고 저장소(NotchDrop 등)는 **레시피만 참고, 코드 복사 금지** → 서드파티 고지 파일 불필요 |
 | D9 | Swift enum | 전역 enum 금지 규칙에서 Swift 예외 승인됨(2026-08-28, quality-gate 반영). 수치 상수는 `Constants.swift` 한곳에 모은다 |
+| D11 | 미디어 소스 확장(2026-08-29) | Apple Music = `scripting-targets`(정식, 임시 예외 아님). Spotify = 설치형 제외(사용자 결정: Mac 지원 중단 안내 확인), `open.spotify.com` 웹 플레이어를 브라우저 경로에 추가. 근거 `docs/strategy/2026-08-29-spotify-integration-research.md` |
 | D10 | 린트(quality-gate) 호환 | 전역 훅 실측 결과에 맞춘 코딩 규칙: ① 수치 상수는 반드시 타입 명시 + 서술적 이름(`static let hoverDelay: TimeInterval = 0.4` ✓, `let timeout = 3.0` ✗) ② 소스에 `https://` 리터럴 금지 — JS/AppleScript는 `location.hostname`·`contains "youtube.com"`처럼 스킴 없는 호스트만 비교, GitHub·개인정보 URL은 Info.plist 키로 두고 런타임에 읽음 ③ 계정·키·비밀값 리터럴 없음(해당 없음) |
 
 ## 3. 제품 동작 (사용자 관점)
@@ -26,7 +27,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 ### 3.1 접힌 상태
 - 노치 영역과 정확히 같은 크기·위치의 검은 형태만 보인다. 그림자·블러 없음(투명 영역 alpha 0 유지 — 메뉴바 클릭을 막지 않기 위해).
 - 셸프에 파일이 있으면 오른쪽 날개에 개수 배지. 그 외 날개 없음. (재생 아트워크 날개는 v1 제외 — 접힌 상태에서 브라우저 폴링을 하지 않기 위해.)
-- **가상 노치**: 대상 화면에 노치가 없으면(외장 모니터만 있는 Mac mini 등) 메뉴바 높이 × 180pt 검은 형태를 메뉴바 중앙에 그린다. 클릭·드래그 진입(+32pt)·단축키·메뉴바 "패널 열기" 모두 실제 노치와 같은 규칙으로 동작한다. 설정 `showVirtualNotch`(기본 ON)로 끌 수 있고, 끄면 메뉴바 아이콘·단축키로만 연다.
+- **가상 노치**: 대상 화면에 노치가 없으면(외장 모니터만 있는 Mac mini 등) 메뉴바 높이 × 180pt 검은 형태를 메뉴바 중앙에 그린다. 클릭·드래그 진입(+32pt)·단축키·메뉴바 "패널 열기" 모두 실제 노치와 같은 규칙으로 동작한다. 설정 `showVirtualNotch`(기본 ON)로 끌 수 있고, 끄면 접힌 모양(과 드래그 진입 밴드)만 숨기고 메뉴바 아이콘·단축키로 펼친 패널은 정상 표시된다.
 - 대상 화면 = 노치가 있는 화면 중 첫 번째, 없으면 `NSScreen.screens[0]`(메뉴바가 있는 화면). 화면 하나에만 표시한다.
 
 ### 3.2 펼치기 / 접기
@@ -35,19 +36,23 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 - 펼침 애니메이션 스프링 0.35초. 앞 앱 포커스를 뺏지 않는다(`.nonactivatingPanel`). 클립보드 검색창 클릭 시에만 키 윈도우가 된다(`wantsKey`).
 - 전체화면 앱 위에서도 표시된다. "전체화면에서 숨김"은 v1.1 후보.
 
-### 3.3 펼친 패널 레이아웃 (탭 없음, 560×190pt)
+### 3.3 펼친 패널 레이아웃 (왼쪽 상단 탭, 440×160pt — 2026-08-29 개정)
 ```
 ┌──────────────────────────── 노치 ────────────────────────────┐
-│ [아트워크] 제목 / 채널        │  셸프 (썸네일 그리드, 최대 12)   │
-│  ◀◀  ▶/❚❚  ▶▶  ──진행──      │  비어 있으면 "파일을 끌어다 놓으세요" │
-│  YouTube Music · Safari       │  항목 우클릭: AirDrop / Finder에서 보기 / 미리보기 / 제거 │
-├──────────────────────────────┴──────────────────────────────┤
-│ 클립보드: [최근 항목 칩 ×5] [▸] [🔍 검색]            [⚙︎]      │
+│ [▶ 미디어] [AirDrop] [클립보드]                          [⚙︎] │
+├──────────────────────────────────────────────────────────────┤
+│ 미디어 탭: [아트워크 72] 제목                   [🌐 브라우저]  │
+│                       아티스트 · YouTube Music                │
+│                       ──────────진행 바──────────              │
+│                       0:42    ◀◀  ▶  ▶▶    3:15   ↗탭 열기    │
+│ AirDrop 탭: 셸프 썸네일 그리드(최대 12). 비어 있으면 "파일을 여기에 놓으세요" │
+│ 클립보드 탭: [🔍 검색] (개수) [🗑 → 전체 삭제] / 히스토리 목록      │
 └──────────────────────────────────────────────────────────────┘
 ```
+- 탭은 `NotchTab`(미디어·AirDrop·클립보드). 한 번에 한 모듈만 보여 높이를 190→160pt로 줄였다. 파일을 셸프에 놓으면 AirDrop 탭으로 자동 전환.
 - 드래그 진입 시 레이아웃이 **두 드롭존**으로 바뀐다: 왼쪽 "AirDrop", 오른쪽 "셸프에 보관". 드롭 위치로 동작 결정. 하나의 AppKit 드롭 뷰가 패널 전체를 덮고 `draggingUpdated`의 커서 위치로 존을 판정하므로 존 사이 이동에 exit 이벤트가 없다.
 - 미디어 칸: `mediaEnabled == false`면 안내 문구 + **[YouTube 제어 사용하기]** 버튼(첫 Apple Event는 이 버튼 뒤에서만 발생). 브라우저 JS 토글이 꺼져 있으면 읽기 전용 표시 + 브라우저별 안내 버튼. `MEDIA_ENABLED` 빌드가 아니면 칸 자체가 없고 셸프가 전체 폭을 쓴다.
-- 클립보드 행: 칩 5개. [▸] 또는 검색창 포커스 시 칩 행이 세로 스크롤 목록(최대 높이 140pt, 전체 히스토리)으로 확장. 항목 우클릭: 삭제. "모두 지우기"는 설정에.
+- 클립보드 탭: 검색창 + 항목 개수 + 휴지통 메뉴(전체 삭제 — 되돌릴 수 없어 메뉴 한 단계 뒤). 아래는 전체 히스토리 목록(클릭 = 복사, 우클릭 = 삭제). 설정의 "히스토리 지우기"도 유지.
 - [⚙︎]: 메뉴바 아이콘과 같은 메뉴(설정… / OpenNotch 정보 / 종료) 팝업.
 
 ### 3.4 기능별 동작
@@ -61,7 +66,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 
 ### 3.5 메뉴바·설정·첫 실행
 - 메뉴바 아이콘(기본 표시): **좌클릭** 메뉴 — 패널 열기 ⌃⌥N / 설정… ⌘, / OpenNotch 정보 / 종료 ⌘Q. 아이콘을 숨길 때 1회 확인 시트("⚙︎ 버튼·⌃⌥N·앱 재실행으로 설정을 열 수 있습니다").
-- 앱을 다시 실행하면(`applicationShouldHandleReopen`) 패널을 펼치고 설정 창을 앞으로. 설정 열기 전 `NSApp.activate(ignoringOtherApps: true)`(LSUIElement 앱에서 창이 뒤에 뜨는 문제 방지).
+- 앱을 다시 실행하면(`applicationShouldHandleReopen`) 패널을 펼친다(설정은 패널의 ⚙︎ 메뉴로). 설정 열기 전 `NSApp.activate(ignoringOtherApps: true)`(LSUIElement 앱에서 창이 뒤에 뜨는 문제 방지).
 - 설정 창(표준 `Settings` 씬, 탭 3개): **일반**(호버로 열기 / 로그인 시 실행 / 메뉴바 아이콘 / 단축키 사용 / 가상 노치 표시 / 클립보드 사용·최대 개수·모두 지우기) · **미디어**(YouTube 제어 사용 / 브라우저별 켜기·상태) · **정보**(버전·GitHub·개인정보 처리방침).
 - 온보딩 창 없음. 첫 실행 시 패널을 1회 자동으로 펼친다(`firstLaunchDone`).
 - 권한 프롬프트: macOS 자동화 프롬프트("OpenNotch이(가) Safari를 제어하려고 합니다")가 **[YouTube 제어 사용하기]를 누른 뒤** 켜진 브라우저별로 1회. 그 외 프롬프트 0개.
@@ -105,15 +110,18 @@ OpenNotch/
 }
 ```
 각 모듈의 공개 진입점:
-- `ShelfStore` (@MainActor @Observable): `items: [ShelfItem]`, `add(urls: [URL])`, `remove(id:)`, `removeAll()`, `withAccess(id:, _ body: (URL) throws -> T) rethrows -> T?`
-- `AirDropService`: `static func canSend() -> Bool`, `func send(urls: [URL], from host: NotchHost)`
+- `ShelfStore` (@MainActor @Observable): `items: [ShelfItem]`, `onCountChanged: ((Int) -> Void)?`, `add(urls: [URL])`, `remove(id:)`, `removeAll()`, `url(for id:) -> URL?`(access 유지 중인 URL), `validatedURL(for id:) -> URL?`(도달 불가면 즉시 제거하고 nil)
+- `AirDropService.shared`: `canSend(urls:) -> Bool`, `send(urls:from window: NSWindow)` — 진행 중 서비스는 `inFlight` 배열로 강참조, 완료/실패 델리게이트에서 제거
+- `QuickLookController.shared.preview(_ url:)`
+- `NotchHost.setShelfBadge(_ count:)` — 접힌 노치 날개 배지
 - `ClipboardStore` (@MainActor @Observable): `items: [ClipItem]`, `copyToPasteboard(id:)`, `remove(id:)`, `removeAll()`, `search(_:) -> [ClipItem]`; `ClipboardMonitor(store:)`: `start()`, `stop()`, `pasteboardBlocked: Bool`, `enableWithUserAction()`
 - `BrowserMediaController` (@MainActor @Observable): `state: MediaState`(`.off`, `.idle`, `.readOnly(title, browser)`, `.playing(NowPlaying)`, `.permissionDenied(browser)`, `.jsDisabled(browser)`), `enable()`, `setExpanded(_:)`, `send(_ cmd: MediaCommand)`
-- 뷰: `ShelfView(store:)`, `ClipboardView(store:)`, `MediaView(controller:)`, `DropZoneView(onEnter:onExit:onDrop:(zone, [URL]))`
+- 드롭: `NotchWindowController.onDropURLs: (([URL], DropZone) -> Bool)?` — P2가 연결. `true`면 컨트롤러가 `.drop(zone)`, `false`(예: AirDrop 불가)면 `.dropRejected`를 보내 패널을 펼친 채 토스트를 보여 준다.
+- 뷰: `ShelfView(store:)`, `ClipboardView(store:)`, `MediaView(controller:)`
 
 ### 4.4 노치 윈도우 (검증된 레시피)
 - `NotchPanel: NSPanel` — `styleMask [.borderless, .nonactivatingPanel]`, `isOpaque=false`, `backgroundColor=.clear`, `hasShadow=false`, `isMovable=false`, `hidesOnDeactivate=false`, `isReleasedWhenClosed=false`, `isFloatingPanel=true` **다음에** `level = .mainMenu + 3`, `collectionBehavior [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]`. 콘텐츠 뷰(NSHostingView 서브클래스)에서 `acceptsFirstMouse(for:) -> true`. `canBecomeKey`는 뷰모델 `wantsKey`일 때만 true. **`ignoresMouseEvents`는 절대 대입하지 않는다.**
-- 프레임: 항상 펼친 크기(560 × (노치높이+190))로 고정, 상단 = `screen.frame.maxY + 1`, 노치 중심 정렬. 접힘/펼침은 SwiftUI 모양 애니메이션만.
+- 프레임: 항상 펼친 크기(440 × (노치높이+160))로 고정, 상단 = `screen.frame.maxY + 1`, 노치 중심 정렬. 접힘/펼침은 SwiftUI 모양 애니메이션만.
 - 기하: `struct ScreenMetrics { frame, visibleFrame, safeAreaTop, auxLeftWidth, auxRightWidth, menuBarHeight }`(`NSScreen` 확장에서 변환, `menuBarHeight = NSStatusBar.system.thickness`). `NotchGeometry.notchRect(_ m: ScreenMetrics) -> (rect: CGRect, isVirtual: Bool)`: 실제 노치 `h = safeAreaTop`, `w = frame.width − auxLeftWidth − auxRightWidth`; 노치 없음이면 `h = max(frame.maxY − visibleFrame.maxY, menuBarHeight)`, `w = 180`.
 - 입력: 호버 = `NSTrackingArea [.mouseEnteredAndExited, .activeAlways, .inVisibleRect]`(`hoverToOpen` ON일 때만 의미); 클릭 = 콘텐츠 뷰 `mouseDown`; 바깥 클릭 = 전역 `.leftMouseDown/.rightMouseDown` + 로컬 모니터 쌍; Esc = `wantsKey` 중 로컬 `.keyDown` 모니터. 드래그 = `DropZoneView`(AppKit `NSDraggingDestination`, `registerForDraggedTypes([.fileURL])`, 접힌 상태에서는 노치+32pt만 hit, 펼친 상태에서는 패널 전체). URL 읽기는 `performDragOperation`에서만 `draggingPasteboard.readObjects(forClasses: [NSURL.self])`. `draggingEntered`→`dragEnter`, `draggingExited`/`draggingEnded`(드롭 없이)→`dragExit`, 드래그 소스가 자체 셸프면 무시. 전부 권한 불필요.
 - 화면 변경: `NSApplication.didChangeScreenParametersNotification` → 대상 화면 재선택·프레임 재계산. `NSScreenNumber`+frame 동일하면 무시.
@@ -135,13 +143,14 @@ init(clock: any Clock<Duration> = ContinuousClock())
 | dragExit(드롭 없이) | – | – | → collapsed |
 | drop(.shelf) | – | – | → expanded (idle 재시작) |
 | drop(.airdrop) | – | – | → collapsed |
+| dropRejected (핸들러가 false 반환: AirDrop 불가 등) | – | – | → expanded (idle 재시작, 토스트 표시) |
 | hotkey / menu "패널 열기" | → expanded | → collapsed | 무시 |
 | screenChanged | 프레임 재계산 | 프레임 재계산 | → collapsed |
 
 ### 4.6 셸프
 - `ShelfItem: Codable { id: UUID, bookmark: Data, displayName: String, addedAt: Date }` → `Application Support/OpenNotch/shelf.json`. 손상 시 빈 목록으로 초기화.
-- 추가: `url.bookmarkData(options: .withSecurityScope)`. 사용: `URL(resolvingBookmarkData:options:.withSecurityScope, bookmarkDataIsStale:)` → `startAccessingSecurityScopedResource()`/`stop…`(defer). stale이면 재생성, 해석 실패면 제거+토스트. 존재 판정은 `checkResourceIsReachable()`(타임스탬프 API 호출 없음).
-- 썸네일: `QLThumbnailGenerator`(64pt), 실패 시 `NSWorkspace.shared.icon(forFile:)`. 미리보기: `QLPreviewPanel`(우클릭 메뉴로 호출).
+- 추가: 드롭 URL로 `bookmarkData(options: .withSecurityScope)` 생성 → **그 bookmark를 해석한 scoped URL**에 `startAccessingSecurityScopedResource()`(드롭 URL 자체는 scoped가 아님). **access는 항목이 셸프에 있는 동안 유지**하고 remove/removeAll/상한 퇴출에서 `stop`(종료 시 미해제는 커널 회수로 허용). 로드 시 해석·start·`checkResourceIsReachable()` 3단 검사로 실패 항목 제거(start 후 실패면 stop), stale이면 bookmark 재생성 후 영속. 사용 시점(메뉴·드래그 아웃)에는 `validatedURL(for:)`로 도달성을 다시 확인해 실패 시 즉시 제거 + 토스트. 타임스탬프 API 호출 없음.
+- 썸네일: `QLThumbnailGenerator`(`Constants.shelfThumbnailSize` = 48pt), 실패 시 `NSWorkspace.shared.icon(forFile:)`. 미리보기: `QLPreviewPanel`(우클릭 메뉴로 호출). 드래그 아웃은 `NSItemProvider(object: url as NSURL)`로 원본 file-url을 등록한다(Finder 등 파일 수신자는 원본 내용을 받는다; Terminal처럼 경로 문자열만 받는 수신자에는 시스템이 샌드박스 임시 사본 경로를 줄 수 있음 — v1 알려진 제한).
 - AirDrop: `NSSharingService(named: .sendViaAirDrop)` → `canPerform(withItems:)` → `NSApp.activate(ignoringOtherApps: true)` → `perform(withItems:)`; 델리게이트 `sourceWindowForShareItems`는 `host.panel`. bookmark URL은 `didShareItems/didFailToShareItems`까지 access 유지.
 
 ### 4.7 클립보드
@@ -153,21 +162,27 @@ init(clock: any Clock<Duration> = ContinuousClock())
 - 복사(칩 클릭): `clearContents()` → 원래 타입으로 쓰기 + 마커 타입.
 - 화면 잠금(`com.apple.screenIsLocked` / `screenIsUnlocked` 분산 알림)에 타이머 정지/재개.
 
-### 4.8 미디어 (Apple Events) — 전체가 `#if MEDIA_ENABLED`
-- Entitlements(`OpenNotch.entitlements`): `com.apple.security.automation.apple-events = true`, `com.apple.security.temporary-exception.apple-events = [com.apple.Safari, com.google.Chrome, com.microsoft.edgemac, company.thebrowser.Browser, com.brave.Browser]`. `BrowserKind`의 번들 ID 집합은 이 5개와 정확히 같고 `EntitlementsTests`가 plist를 읽어 일치를 검증한다. `NSAppleEventsUsageDescription`(ko/en): "열어 둔 YouTube 탭의 재생 정보를 읽고 재생/일시정지를 실행하기 위해 브라우저에 접근합니다."
-- 기본 `mediaEnabled = false`. 패널의 [YouTube 제어 사용하기] 또는 설정 토글로 켤 때 현재 실행 중인 지원 브라우저를 `enabledBrowsers`에 넣고 폴링 시작 → 자동화 프롬프트는 그때 브라우저별 1회. 설정 미디어 탭에서 브라우저별 켜고 끌 수 있다.
+### 4.8 미디어 (Apple Events) — 실행부는 `#if MEDIA_ENABLED`
+- `BrowserKind`·`MediaScript`(순수 데이터·문자열)는 게이트 밖에 두어 테스트 타깃(조건 없음)에서도 컴파일된다. `MediaController`(NSAppleScript 실행)·`MediaView`·AppDelegate 배선만 게이트 안.
+- Entitlements(`OpenNotch.entitlements`): `com.apple.security.automation.apple-events = true`, `com.apple.security.temporary-exception.apple-events = [com.apple.Safari, com.google.Chrome, com.microsoft.edgemac, company.thebrowser.Browser, com.brave.Browser, com.naver.Whale]`. `BrowserKind`의 번들 ID 집합은 이 6개와 정확히 같고 `EntitlementsTests`가 plist를 읽어 일치를 검증한다. `NSAppleEventsUsageDescription`(ko/en): "열어 둔 YouTube 탭의 재생 정보를 읽고 재생/일시정지를 실행하기 위해 브라우저에 접근합니다."
+- 기본 `mediaEnabled = false`. 패널의 [YouTube 제어 사용하기] 또는 설정 토글로 켜면 **실행 중인 지원 브라우저를 모두** 폴링한다(v1.5: 켤 때 실행 중이던 브라우저만 등록하는 allow-list는 나중에 연 브라우저가 영영 빠지는 문제가 있어 폐기). 설정에서 끈 브라우저는 `disabledBrowsers`에 기록해 제외. 자동화 프롬프트는 브라우저별 첫 probe 때 1회.
 - 폴링: **패널 펼침 중 2초, 접힘 0**. `mediaEnabled == false`면 Apple Event 0회. 실행 중이고 켜진 브라우저에만 전송. 브라우저를 실행시키지 않는다.
-- 한 번의 폴링 = 브라우저당 AppleScript 1회(탭 URL·제목 열거 — JS 토글 불필요) + YouTube 탭이 있으면 JS 1회. `NSAppleScript`는 백그라운드 큐에서 실행, 타임아웃 3초, 결과를 `@MainActor`로 전달.
+- 한 번의 폴링 = 브라우저당 AppleScript 1회. 스크립트 하나가 탭을 열거하고 YouTube 탭(`music.youtube.com` 또는 `youtube.com/watch`)에서 JS probe까지 실행해 `FOUND\t창\t탭\tURL\t제목\tJS오류코드\tJSON` 한 줄(또는 `NONE`)을 돌려준다. 재생 중인 탭을 우선하고 없으면 첫 탭. 주의: tell 블록 안에서 `tab`은 브라우저의 tab 클래스로 해석되므로 구분자는 블록 밖에서 `ASCII character 9`로 묶는다. `NSAppleScript`는 백그라운드 직렬 큐에서 실행, 결과를 `@MainActor`로 전달. 타임아웃 3초는 **두 겹**: 스크립트 안 `with timeout of 3 seconds`(Apple Event 자체가 3초에 -1712로 끝나 큐가 안 막힘) + 실행기가 3초 뒤 결과를 안 기다리고 실패를 돌려줌(`withTaskGroup`은 자식이 끝날 때까지 반환하지 않으므로 continuation + once 게이트로 구현). 타임아웃은 백오프 없이 다음 폴링에 재시도.
 - `MediaScript`: JS 페이로드는 Swift raw string(`#"""…"""#`)으로 파일 안에 보관. AppleScript에 삽입 전 `\` → `\\`, `"` → `\"` 이스케이프 후 한 줄로 결합. `probe(browser:)`, `listTabs(browser:)`, `command(browser:, tabIndex:, cmd:)`는 문자열만 만든다(테스트 대상).
-- probe JS 반환 JSON 스키마(`NowPlaying`): `{ "title": String, "artist": String?, "artwork": String? (data:image/…;base64, 페이지 컨텍스트에서 fetch → ≤48KB, 96px 후보 선택, 실패 시 null), "playing": Bool, "position": Double(초), "duration": Double(초), "site": "youtube" | "youtube_music" }`. 앱은 네트워크를 쓰지 않는다.
+- probe JS 반환 JSON 스키마(`NowPlaying`): `{ "title": String, "artist": String?, "artwork": String? (data:image/…;base64. `execute javascript`는 동기라 fetch를 기다릴 수 없으므로 페이지 컨텍스트에서 비동기로 받아 `window.__onArt`에 캐시하고 **다음 폴링**에 실린다. ≤48KB, 96px 이상 최소 후보, 실패 시 null), "playing": Bool, "position": Double(초), "duration": Double(초), "site": "youtube" | "youtube_music" }`. 앱은 네트워크를 쓰지 않는다.
 - command JS: `play|pause|next|prev` — `<video>` 제어, next/prev는 사이트별 DOM 버튼(`.ytp-next-button`/`.ytp-prev-button`, `ytmusic-player-bar .next-button/.previous-button`) 클릭.
-- `MediaError.classify(code:message:) -> MediaState`: `-1743` → `.permissionDenied(browser)`(버튼: 시스템 설정 > 개인정보 보호 > 자동화); JS 비활성 → `.jsDisabled(browser)`(브라우저별 안내: Chrome/Edge/Arc/Brave = 보기 > 개발자 > Apple Events의 JavaScript 허용, Safari = 설정 > 고급 > 웹 개발자용 기능 표시 → 개발자 > Apple Events의 JavaScript 허용); `-600` → `.idle`; 그 외 → 로그 + 30초 백오프. **JS 비활성의 실제 오류 코드·문자열은 P4 착수 시 Safari/Chrome에서 채집해 상수로 기재**하고 테스트한다.
+- `seek(0…1)`: `video.currentTime = arg * duration`. 진행 바는 클릭·드래그 가능. **NSSlider 금지** — 비활성 패널에서 모달 추적 루프(`trackMouse…untilMouseUp`)가 마우스 업을 놓치면 메인 스레드가 영구 정지한다(2026-08-28 실측). SwiftUI `Slider`는 내부 NSSlider가 첫 클릭을 삼킨다. mouseDown/Dragged/Up만 받는 자체 NSView(`SeekSlider.BarView`) 사용.
+- 여러 브라우저: 켜진 브라우저를 모두 probe해 후보 목록을 만든다. 표시 우선순위 = 사용자가 전환 버튼으로 고정한 브라우저 > 재생 중 > 직전에 표시하던 브라우저 > 첫 번째. 브라우저 안에서는 재생 중 탭 > 직전 탭(`prefer`) > 첫 탭. 후보가 2개 이상이면 아티스트 줄 옆에 `Whale ⇄` 전환 버튼.
+- JS 토글 없이도 되는 것: 탭 제목 표시, "탭으로 이동"(브라우저 activate + 탭 선택). "어디서 켜나요?"는 브라우저를 앞으로 가져온 뒤 브라우저별 메뉴 경로를 토스트로 안내한다(Whale은 보기 › 개발자 정보). 앱이 토글을 대신 켤 방법은 없다(설정 파일·API 없음, UI 스크립팅 클릭은 크로미움이 무시).
+- `MediaError.classify(code:message:) -> MediaState`: `-1743` → `.permissionDenied(browser)`(버튼: 시스템 설정 > 개인정보 보호 > 자동화); JS 비활성 → `.jsDisabled(browser)`(브라우저별 안내: Chrome/Edge/Arc/Brave = 보기 > 개발자 > Apple Events의 JavaScript 허용, Safari = 설정 > 고급 > 웹 개발자용 기능 표시 → 개발자 > Apple Events의 JavaScript 허용); `-600` → `.idle`; 그 외 → 로그 + 30초 백오프. JS 비활성 오류 코드는 크로미움 계열 **12**(2026-08-28 Whale 4.39에서 채집, 메시지 "AppleScript를 통한 자바스크립트 실행 기능이 꺼져 있습니다…"). 구현(2026-08-29 개정): 타임아웃(-1712/-1)은 일시 오류로 보고 같은 탭이면 직전 재생 정보를 유지·안내 없음, 크로미움 12(Safari는 타임아웃 외 전부)만 토글 꺼짐으로 안내한다. 명령은 probe보다 우선순위 높은 OperationQueue로 끼어들고, 명령 전에 시작된 probe 결과는 세대 카운터로 버린다. 안내는 `MediaSetupGuideView` 창(브라우저별 단계 + 실시간 토글 상태). 탭 URL·제목 열거는 이 토글 없이도 된다(자동화 권한만 필요).
 - 읽기 전용 모드: JS 실패 시 탭 제목(`"제목 - YouTube"`, `"제목 - YouTube Music"`)만 표시, 컨트롤 비활성.
 - 사이트 배지는 텍스트("YouTube Music")만. YouTube 로고 에셋을 번들에 넣지 않는다.
+- **Apple Music 소스(v1.6)**: `BrowserKind.appleMusic = "com.apple.Music"`(브라우저가 아니지만 같은 후보·우선순위·전환 로직을 탄다, `isBrowser == false`). Entitlements에 `com.apple.security.scripting-targets = { com.apple.Music: [com.apple.Music.playback, com.apple.Music.library.read] }` — Music.sdef 실측: 재생 상태·위치·명령·`current track` 속성은 `playback`, `artwork`의 `raw data`는 `library.read`. temporary-exception 목록은 `BrowserKind.browsers`(6개)만. probe는 Music이 실행 중일 때만, `player state`가 stopped면 `NONE`. 출력 `MUSIC\t재생중\t위치\t길이\t제목\t아티스트\tpersistentID` → Swift가 `NowPlaying(site: "apple_music")`으로 조립. 아트워크는 persistent ID가 바뀔 때 1회 `raw data of artwork 1 of current track`(네트워크 없음). seek = `set player position to duration × f`. 안내 창에는 나오지 않는다(JS 토글 없음). 설정 토글 목록에는 "Apple Music"으로 포함.
+- **Spotify 웹 플레이어(v1.6)**: `open.spotify.com` 탭도 probe 대상. `<video>`가 없으므로 `navigator.mediaSession` 메타데이터·재생 상태 + 진행 표시 DOM에서 위치/길이, 제어는 `data-testid` 버튼 클릭. 상세 셀렉터는 로그인 실측 후 확정. 설치형 Spotify(`com.spotify.client`)는 넣지 않는다.
 
 ### 4.9 설정 키 (`Preferences.swift`, `@AppStorage`)
-`hoverToOpen`(false) · `launchAtLogin`(false, `SMAppService.status`와 동기화) · `showMenuBarIcon`(true) · `hotkeyEnabled`(true) · `showVirtualNotch`(true) · `clipboardEnabled`(true) · `clipboardLimit`(100) · `firstLaunchDone`(false) · [MEDIA] `mediaEnabled`(false) · `enabledBrowsers`([])
-수치 상수(`Constants.swift`): 호버 지연 0.4s, 호버 이탈 0.3s, 유휴 6s, 드래그 진입 여유 32pt, 가상 노치 폭 180pt, 패널 560×190, 셸프 상한 12, 폴링 2s, 스크립트 타임아웃 3s, 이미지 상한 10MB, 아트워크 상한 48KB.
+`hoverToOpen`(true) · `launchAtLogin`(false, `SMAppService.status`와 동기화) · `showMenuBarIcon`(true) · `hotkeyEnabled`(true) · `showVirtualNotch`(true) · `clipboardEnabled`(true) · `clipboardLimit`(100) · `firstLaunchDone`(false) · [MEDIA] `mediaEnabled`(true) · `disabledBrowsers`("" — 끈 브라우저 번들 ID를 쉼표로 이은 문자열, `@AppStorage` 호환)
+수치 상수(`Constants.swift`): 호버 지연 0.4s, 호버 이탈 0.3s, 유휴 6s, 드래그 진입 여유 32pt, 가상 노치 폭 180pt, 패널 440×160, 셸프 상한 12, 폴링 2s, 스크립트 타임아웃 3s, 이미지 상한 10MB, 아트워크 상한 48KB.
 
 ### 4.10 App Store 패키징
 - Info.plist: `LSUIElement=YES`, `LSMinimumSystemVersion=14.0`, `LSApplicationCategoryType=public.app-category.utilities`, `NSHumanReadableCopyright`, `ITSAppUsesNonExemptEncryption=NO`, `CFBundleDisplayName=OpenNotch`, [MEDIA] `NSAppleEventsUsageDescription`.
