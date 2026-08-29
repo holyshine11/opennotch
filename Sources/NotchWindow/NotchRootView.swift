@@ -59,7 +59,10 @@ struct NotchRootView: View {
             .allowsHitTesting(showsCollapsedVisuals)
             .onTapGesture(coordinateSpace: .local) { location in
                 guard showsCollapsedVisuals else { return }
-                if !isOpen || location.y <= notchHeight { viewModel.send(.clickNotch) }
+                // 펼친 상태에서는 노치 자체(가운데)만 접기 — 좌우 날개에는 탭·기어가 있다.
+                if !isOpen || (location.y <= notchHeight && abs(location.x - Constants.panelWidth / 2) <= notch.rect.width / 2) {
+                    viewModel.send(.clickNotch)
+                }
             }
             .onHover { inside in
                 guard showsCollapsedVisuals else { return }
@@ -114,7 +117,7 @@ struct NotchRootView: View {
 
     @ViewBuilder private var content: some View {
         VStack(spacing: 0) {
-            Color.clear.frame(height: notchHeight)   // 노치 밴드: 펼친 상태에서 다시 클릭하면 접힌다(부모 ZStack의 탭 제스처가 처리)
+            notchBand
             if viewModel.state == .dropTargeting {
                 dropZones
             } else {
@@ -126,29 +129,41 @@ struct NotchRootView: View {
         .onContinuousHover { phase in if case .active = phase { viewModel.resetIdle() } }
     }
 
-    /// 왼쪽 상단 탭 바 + 선택된 모듈 한 칸. 드롭 후에는 셸프 탭으로 전환한다(onChange).
-    private var panes: some View {
-        VStack(spacing: 6) {
+    /// 노치 밴드: 왼쪽 날개에 탭(아이콘), 오른쪽 날개에 기어. 가운데(노치)는 클릭하면 접힌다(부모 ZStack의 탭 제스처).
+    private var notchBand: some View {
+        let wing = (Constants.panelWidth - notch.rect.width) / 2
+        return HStack(spacing: 0) {
             HStack(spacing: 4) {
                 ForEach(NotchTab.allCases, id: \.self) { tab in
                     Button { selectedTab = tab } label: {
-                        Label(tab.title, systemImage: tab.symbol)
-                            .font(.caption.weight(selectedTab == tab ? .semibold : .regular))
-                            .padding(.horizontal, 10)
-                            .frame(height: Constants.panelTabBarHeight)
+                        Image(systemName: tab.symbol)
+                            .font(.system(size: 13, weight: selectedTab == tab ? .semibold : .regular))
+                            .frame(width: Constants.panelTabBarHeight + 4, height: Constants.panelTabBarHeight)
                             .background(Color.white.opacity(selectedTab == tab ? 0.16 : 0), in: Capsule())
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(selectedTab == tab ? .white : .secondary)
+                    .help(tab.title)
                 }
-                Spacer()
-                gearMenu
             }
-            pane(for: selectedTab)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.leading, 10)
+            .frame(width: wing, alignment: .leading)
+            Color.clear.frame(width: notch.rect.width)
+            gearMenu
+                .padding(.trailing, 10)
+                .frame(width: wing, alignment: .trailing)
         }
-        .padding(10)
+        .frame(height: notchHeight)
+    }
+
+    /// 선택된 모듈 한 칸이 본문 전체를 쓴다. 드롭 후에는 셸프 탭으로 전환한다(onChange).
+    private var panes: some View {
+        pane(for: selectedTab)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 10)
+            .padding(.top, 6)
     }
 
     private func pane(for tab: NotchTab) -> AnyView {

@@ -35,8 +35,8 @@ enum Constants {
     static let mediaTickInterval: TimeInterval = 0.5
     static let mediaCommandRefreshDelay: TimeInterval = 0.5
     static let mediaArtworkMaxBytes: Int = 200_000
-    static let mediaArtworkTargetPixels: Int = 144
-    static let mediaArtworkSize: CGFloat = 72
+    static let mediaArtworkTargetPixels: Int = 256   // mediaArtworkSize @2x
+    static let mediaArtworkSize: CGFloat = 128       // = panelBodyHeight − 페인 패딩(6+10) − MediaView 패딩(8×2): 본문 높이를 꽉 채운다
     static let mediaSeekBarHeight: CGFloat = 4
     static let mediaSeekHitHeight: CGFloat = 14
     static let youtubeMusicHost: String = "music.youtube.com"
