@@ -13,7 +13,7 @@ App Store Connect에 붙여 넣을 텍스트와 체크리스트. 스펙 §4.10 �
 | 가격 | 무료 |
 | 최소 macOS | 14.0 |
 | 지원 URL | https://github.com/holyshine11/OpenNotch |
-| 개인정보 처리방침 URL | https://holyshine11.github.io/OpenNotch/privacy (GitHub Pages — 아래 5절) |
+| 개인정보 처리방침 URL | https://holyshine11.github.io/opennotch/privacy (GitHub Pages — 아래 5절) |
 | 저작권 | © 2026 holyshine11. MIT License. |
 
 키워드(ko, 100자 이내): `노치,AirDrop,클립보드,유튜브,YouTube Music,셸프,파일,드롭,메뉴바,맥북`
@@ -70,7 +70,7 @@ Used to show the current Apple Music track (name, artist, duration, position, ar
 1. GitHub 저장소 → Settings → Pages → Source: *Deploy from a branch*, Branch: `main`, Folder: `/docs` 선택.
 2. `docs/privacy.md`가 `PRIVACY.md` 내용을 가리키도록 복사(이미 저장소 루트에 `PRIVACY.md` 있음) — 아래 명령:
    `cp PRIVACY.md docs/privacy.md && git add docs/privacy.md`
-3. 몇 분 뒤 https://holyshine11.github.io/OpenNotch/privacy 가 열리는지 확인.
+3. 몇 분 뒤 https://holyshine11.github.io/opennotch/privacy 가 열리는지 확인.
 
 ## 6. 연령 등급 설문
 모든 항목 "없음" → 4+. (폭력·성·도박·의료·무제한 웹 접근·사용자 생성 콘텐츠 모두 없음. 브라우저 탭 제목을 읽지만 웹 콘텐츠를 표시하지 않음.)
