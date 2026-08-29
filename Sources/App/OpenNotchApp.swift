@@ -15,6 +15,11 @@ struct OpenNotchApp: App {
                 NotificationCenter.default.post(name: .openNotchTogglePanel, object: nil)
             }
             .keyboardShortcut("n", modifiers: [.control, .option])
+            #if MEDIA_ENABLED
+            Button("Music controls setup…") {
+                NotificationCenter.default.post(name: .openNotchShowMediaSetup, object: nil)
+            }
+            #endif
             Divider()
             SettingsLink { Text("Settings…") }
                 .keyboardShortcut(",", modifiers: .command)

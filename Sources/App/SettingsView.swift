@@ -64,7 +64,7 @@ struct GeneralSettingsView: View {
                     Toggle(browser.displayName, isOn: browserBinding(browser)).disabled(!mediaEnabled)
                 }
                 Button("Setup guide…") { NotificationCenter.default.post(name: .openNotchShowMediaSetup, object: nil) }
-                Text("Needs a one-time browser setting. The guide shows where.")
+                Text("Apple Music works right away. Browsers need a one-time setting — the guide shows where.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             #endif

@@ -99,6 +99,8 @@ final class MediaController {
     private(set) var sourceCount: Int = 0
     /// 브라우저별 JS 토글 상태(마지막 probe 기준): true = 제어 가능, false = 토글 꺼짐, 없음 = YouTube 탭을 아직 못 봄.
     private(set) var jsReady: [BrowserKind: Bool] = [:]
+    /// 자동화 권한이 거부된 브라우저. 안내 창이 브라우저마다 다른 안내를 고르는 데 쓴다.
+    private(set) var deniedBrowsers: Set<BrowserKind> = []
     /// 디코딩한 아트워크. 문자열이 바뀔 때만 다시 만든다(0.5초 틱마다 base64 디코딩을 반복하지 않게).
     private(set) var artworkImage: NSImage?
     private var artworkKey: String?
@@ -194,17 +196,18 @@ final class MediaController {
                 let started = Date()
                 switch await AppleScriptRunner.run(MediaScript.probe(browser: browser, prefer: current.flatMap { $0.browser == browser ? (window: $0.window, tab: $0.tab) : nil }), timeout: Constants.mediaScriptTimeout) {
                 case .success(let out):
+                    deniedBrowsers.remove(browser)
                     if let probe = MediaScript.parseProbe(out) {
                         found.append(Candidate(browser: browser, probe: probe, at: Date()))
                         if let code = probe.jsErrorCode {
-                            if !MediaScript.isTransientJSError(code) { jsReady[browser] = !MediaScript.isJSDisabled(code, browser: browser) }
+                            if !MediaScript.isTransientJSError(code) { setJSReady(browser, !MediaScript.isJSDisabled(code, browser: browser)) }
                         } else {
-                            jsReady[browser] = true
+                            setJSReady(browser, true)
                         }
                     }
                 case .failure(let f):
                     switch f.code {
-                    case AppleScriptFailure.permissionDenied: denied = browser
+                    case AppleScriptFailure.permissionDenied: denied = browser; deniedBrowsers.insert(browser)
                     case AppleScriptFailure.notRunning, AppleScriptFailure.cantGet, AppleScriptFailure.invalidIndex: continue
                     case AppleScriptFailure.timedOut, AppleScriptFailure.eventTimedOut:
                         // 권한 프롬프트가 떠 있거나 브라우저가 바쁜 경우. 이 브라우저만 잠시 건너뛴다.
@@ -242,7 +245,19 @@ final class MediaController {
         }
     }
 
+    /// 안내 창이 브라우저마다 "지금 할 일 하나"를 고르는 기준.
+    func setupStatus(_ browser: BrowserKind) -> BrowserSetupStatus {
+        .derive(jsReady: jsReady[browser], denied: deniedBrowsers.contains(browser), running: browser.isRunning)
+    }
+
     // MARK: 내부
+
+    /// 제어에 한 번이라도 성공하면 설정을 마쳤다고 기록한다 — 패널의 첫 실행 안내 카드가 이 값을 보고 사라진다.
+    private func setJSReady(_ browser: BrowserKind, _ ready: Bool) {
+        jsReady[browser] = ready
+        let defaults = UserDefaults.standard
+        if ready, !defaults.bool(forKey: PrefKey.mediaSetupDone) { defaults.set(true, forKey: PrefKey.mediaSetupDone) }
+    }
 
     private func probeIsPlaying(_ c: Candidate) -> Bool {
         c.probe.json.contains("\"playing\":true")
@@ -320,6 +335,7 @@ final class MediaController {
         current = nil
         candidates = []
         jsReady = [:]
+        deniedBrowsers = []
         setArtwork(nil)
     }
 

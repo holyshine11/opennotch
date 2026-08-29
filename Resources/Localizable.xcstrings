@@ -71,6 +71,16 @@
         }
       }
     },
+    "All set — every browser is ready.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완료 — 모든 브라우저를 제어할 수 있습니다."
+          }
+        }
+      }
+    },
     "Allow JavaScript from Apple Events": {
       "localizations": {
         "ko": {
@@ -117,16 +127,6 @@
         }
       }
     },
-    "Allow control in macOS": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS에서 제어 허용"
-          }
-        }
-      }
-    },
     "Allow in System Settings…": {
       "localizations": {
         "ko": {
@@ -143,6 +143,56 @@
           "stringUnit": {
             "state": "translated",
             "value": "앱"
+          }
+        }
+      }
+    },
+    "Apple Music works right away. Browsers need a one-time setting — the guide shows where.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Music은 바로 됩니다. 브라우저는 설정 하나가 필요합니다 — 안내에서 위치를 보여 줍니다."
+          }
+        }
+      }
+    },
+    "Apple Music works right away. Each browser needs one setting turned on — about a minute.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Music은 바로 됩니다. 브라우저는 설정 하나만 켜면 됩니다 — 1분이면 충분합니다."
+          }
+        }
+      }
+    },
+    "Apple Music works right away. No supported browser is installed.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Music은 바로 됩니다. 지원하는 브라우저는 설치되어 있지 않습니다."
+          }
+        }
+      }
+    },
+    "Blocked in System Settings": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 설정에서 차단됨"
+          }
+        }
+      }
+    },
+    "Browsers need a one-time setting — about a minute.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "브라우저는 설정 하나만 켜면 됩니다 — 1분이면 충분합니다."
           }
         }
       }
@@ -167,12 +217,12 @@
         }
       }
     },
-    "Click Allow when macOS asks. If you missed it:": {
+    "Click the notch or press ⌃⌥N to open the panel.": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "macOS가 물어보면 ‘허용’을 누르세요. 놓쳤다면:"
+            "value": "노치를 클릭하거나 ⌃⌥N을 누르면 패널이 열립니다."
           }
         }
       }
@@ -187,22 +237,22 @@
         }
       }
     },
+    "Control YouTube, Spotify web and Apple Music from here": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "여기서 YouTube·Spotify 웹·Apple Music을 제어하세요"
+          }
+        }
+      }
+    },
     "Control YouTube, Spotify web, and Apple Music": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
             "value": "YouTube·Spotify 웹·Apple Music 제어"
-          }
-        }
-      }
-    },
-    "Controls need “Allow JavaScript from Apple Events”": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "제어하려면 “Apple Events의 자바스크립트 허용”이 필요합니다"
           }
         }
       }
@@ -279,6 +329,26 @@
         }
       }
     },
+    "Done": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완료"
+          }
+        }
+      }
+    },
+    "Drag files onto the notch to AirDrop them or keep them in the shelf.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "파일을 노치로 끌어오면 AirDrop으로 보내거나 셸프에 보관할 수 있습니다."
+          }
+        }
+      }
+    },
     "Drop files here": {
       "localizations": {
         "ko": {
@@ -295,6 +365,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "클립보드 기록 켜기"
+          }
+        }
+      }
+    },
+    "Everything you copy is kept in the Clipboard tab.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "복사한 내용은 클립보드 탭에 쌓입니다."
           }
         }
       }
@@ -355,16 +435,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "메뉴 막대 아이콘을 숨길까요?"
-          }
-        }
-      }
-    },
-    "How to set up…": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "설정 방법 보기…"
           }
         }
       }
@@ -459,22 +529,42 @@
         }
       }
     },
-    "Needs a one-time browser setting. The guide shows where.": {
+    "Music controls": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "브라우저에서 한 번 켜 줄 설정이 있습니다. 위치는 설정 안내에서 확인하세요."
+            "value": "음악 제어"
           }
         }
       }
     },
-    "No Developer tab? In Advanced, turn on “Show features for web developers” first.": {
+    "Music controls setup": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "개발자 탭이 없나요? 고급 탭에서 “웹 개발자를 위한 기능 보기”를 먼저 켜세요."
+            "value": "음악 제어 설정"
+          }
+        }
+      }
+    },
+    "Music controls setup…": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음악 제어 설정…"
+          }
+        }
+      }
+    },
+    "No Developer tab? In Settings › Advanced, turn on “Show features for web developers” first.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개발자 탭이 없나요? 설정 › 고급에서 “웹 개발자를 위한 기능 보기”를 먼저 켜세요."
           }
         }
       }
@@ -509,32 +599,12 @@
         }
       }
     },
-    "Off": {
+    "One browser setting away from full controls": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "꺼짐"
-          }
-        }
-      }
-    },
-    "One-time setup for each browser.": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "브라우저마다 한 번만 하면 됩니다."
-          }
-        }
-      }
-    },
-    "Open %@": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 열기"
+            "value": "브라우저 설정 하나만 켜면 제어할 수 있습니다"
           }
         }
       }
@@ -569,32 +639,12 @@
         }
       }
     },
-    "Open System Settings › Automation": {
+    "Open YouTube in %@": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시스템 설정 › 자동화 열기"
-          }
-        }
-      }
-    },
-    "Open a YouTube tab to check": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "YouTube 탭을 열면 확인됩니다"
-          }
-        }
-      }
-    },
-    "Open a YouTube tab — the check turns green as soon as it’s on.": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "YouTube 탭을 열어 두면, 켜지는 즉시 초록 체크로 바뀝니다."
+            "value": "%@에서 YouTube 열기"
           }
         }
       }
@@ -625,6 +675,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apple Music에서 재생하거나, 브라우저에서 YouTube 또는 Spotify를 열어 주세요"
+          }
+        }
+      }
+    },
+    "Press the button next to a browser to open YouTube in it. If macOS asks to allow control, click Allow. Then turn on the menu item shown under that browser — the check turns green by itself.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "브라우저 옆 버튼을 누르면 그 브라우저에서 YouTube가 열립니다. macOS가 제어를 허용할지 물어보면 ‘허용’을 누르세요. 그다음 브라우저 아래 표시된 메뉴 항목을 켜면 체크가 저절로 초록색이 됩니다."
           }
         }
       }
@@ -729,6 +789,16 @@
         }
       }
     },
+    "Set up…": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정하기…"
+          }
+        }
+      }
+    },
     "Settings": {
       "localizations": {
         "ko": {
@@ -775,6 +845,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "셸프"
+          }
+        }
+      }
+    },
+    "Show %@": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 보기"
           }
         }
       }
@@ -829,6 +909,16 @@
         }
       }
     },
+    "Skip": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "건너뛰기"
+          }
+        }
+      }
+    },
     "Switch source": {
       "localizations": {
         "ko": {
@@ -839,12 +929,32 @@
         }
       }
     },
-    "Turn on this menu item in the browser": {
+    "This window updates by itself — leave it open while you flip the switch.": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "브라우저 메뉴에서 이 항목 켜기"
+            "value": "이 창은 저절로 갱신됩니다 — 스위치를 켜는 동안 열어 두세요."
+          }
+        }
+      }
+    },
+    "Turn on %@ under OpenNotch in Privacy & Security › Automation, then come back.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개인정보 보호 및 보안 › 자동화에서 OpenNotch 아래 %@을(를) 켠 뒤 돌아오세요."
+          }
+        }
+      }
+    },
+    "Turn on the menu item below": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아래 메뉴 항목을 켜세요"
           }
         }
       }
@@ -879,6 +989,26 @@
         }
       }
     },
+    "Waiting for a YouTube tab": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YouTube 탭을 기다리는 중"
+          }
+        }
+      }
+    },
+    "Welcome to OpenNotch": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenNotch에 오신 것을 환영합니다"
+          }
+        }
+      }
+    },
     "You can still open Settings from the ⚙︎ button in the panel (open it with ⌃⌥N or by launching OpenNotch again).": {
       "localizations": {
         "ko": {
@@ -899,12 +1029,12 @@
         }
       }
     },
-    "YouTube controls setup": {
+    "Your notch is now a panel.": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "YouTube 제어 설정"
+            "value": "노치가 패널이 됩니다."
           }
         }
       }

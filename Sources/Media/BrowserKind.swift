@@ -1,5 +1,19 @@
 import AppKit
 
+/// 안내 창에서 브라우저마다 "지금 할 일 하나"를 고르기 위한 상태.
+enum BrowserSetupStatus: Equatable, Sendable {
+    case ready, jsOff, permissionDenied, noTab, notRunning
+
+    static func derive(jsReady: Bool?, denied: Bool, running: Bool) -> BrowserSetupStatus {
+        if denied { return .permissionDenied }
+        switch jsReady {
+        case true?: return .ready
+        case false?: return .jsOff
+        default: return running ? .noTab : .notRunning
+        }
+    }
+}
+
 /// 미디어 소스. rawValue = 번들 ID. 브라우저(`isBrowser`)는 `OpenNotch.entitlements`의 temporary-exception 목록과,
 /// Apple Music은 `scripting-targets` 키와 정확히 같아야 한다(EntitlementsTests).
 /// 순수 데이터라 `#if MEDIA_ENABLED` 밖에 둔다(테스트 타깃에서도 컴파일).
@@ -73,4 +87,10 @@ enum BrowserKind: String, CaseIterable, Sendable {
         }
     }
 
+    /// 확인용 페이지(YouTube Music)를 이 브라우저에서 연다. 실행 중이 아니면 함께 실행된다 — 안내 창에서 탭을 직접 찾아 열지 않아도 되게.
+    func openCheckPage() {
+        guard let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: rawValue),
+              let url = Constants.mediaSetupCheckURL else { return }
+        NSWorkspace.shared.open([url], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
+    }
 }

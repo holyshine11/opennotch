@@ -38,9 +38,19 @@ enum Constants {
     static let mediaArtworkMaxBytes: Int = 200_000
     static let mediaArtworkTargetPixels: Int = 256   // mediaArtworkSize @2x
     static let mediaArtworkSize: CGFloat = 128       // = panelBodyHeight − 페인 패딩(6+10) − MediaView 패딩(8×2): 본문 높이를 꽉 채운다
+    static let mediaSetupWindowWidth: CGFloat = 520
+    static let mediaSetupWindowMargin: CGFloat = 80    // 안내 창이 화면 높이에서 남겨 두는 여백
+    static let mediaSetupFallbackHeight: CGFloat = 800 // 화면 정보를 못 얻을 때의 안내 창 높이 상한
     static let mediaSeekBarHeight: CGFloat = 4
     static let mediaSeekHitHeight: CGFloat = 14
     static let youtubeMusicHost: String = "music.youtube.com"
+    /// 안내 창의 [브라우저에서 YouTube 열기]가 여는 확인용 페이지. 호스트 상수로 조립한다(URL 리터럴 금지).
+    static let mediaSetupCheckURL: URL? = {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = youtubeMusicHost
+        return components.url
+    }()
     static let youtubeWatchPath: String = "youtube.com/watch"
     static let spotifyWebHost: String = "open.spotify.com"
     static let automationPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"

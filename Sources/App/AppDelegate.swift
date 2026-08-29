@@ -83,6 +83,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !defaults.bool(forKey: PrefKey.firstLaunchDone) {
             defaults.set(true, forKey: PrefKey.firstLaunchDone)
             controller.viewModel.send(.toggleRequested)
+            #if MEDIA_ENABLED
+            showMediaSetup(welcome: true)
+            #endif
         }
     }
 
@@ -97,21 +100,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     #if MEDIA_ENABLED
-    /// 설정 안내 창. 한 번 만들어 두고 닫아도 유지한다(닫기 = 숨김).
-    private func showMediaSetup() {
+    /// 설정 안내 창. 부를 때마다 새로 만든다 — 환영 인사는 첫 실행 창에만 붙는다.
+    private func showMediaSetup(welcome: Bool = false) {
         guard let mediaController else { return }
-        if mediaSetupWindow == nil {
-            let hosting = NSHostingController(rootView: MediaSetupGuideView(controller: mediaController))
-            hosting.sizingOptions = .preferredContentSize   // 창 높이 = 내용 높이(스크롤 없음)
-            let window = NSWindow(contentViewController: hosting)
-            window.title = String(localized: "YouTube controls setup")
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            mediaSetupWindow = window
-        }
+        mediaSetupWindow?.close()
+        // 내용이 화면보다 길면 스크롤한다. 상태가 바뀌어도 창 크기는 그대로 — 안내 창은 열려 있는 동안 계속 갱신되므로
+        // 크기를 계속 되먹이면 AppKit이 한 표시 주기에서 제약 갱신 횟수를 넘겨 창을 포기한다(NSGenericException).
+        let maxHeight = (NSScreen.main?.visibleFrame.height ?? Constants.mediaSetupFallbackHeight) - Constants.mediaSetupWindowMargin
+        let hosting = NSHostingController(rootView: ScrollView {
+            MediaSetupGuideView(controller: mediaController, showWelcome: welcome)
+        })
+        hosting.sizingOptions = .preferredContentSize
+        let fitting = hosting.view.fittingSize          // 열 때 한 번만 잰다
+        hosting.sizingOptions = []                      // 그 뒤로는 창이 내용 크기를 따라가지 않는다
+        let window = NSWindow(contentViewController: hosting)
+        window.setContentSize(NSSize(width: Constants.mediaSetupWindowWidth, height: min(fitting.height, maxHeight)))
+        window.title = welcome ? String(localized: "Welcome to OpenNotch") : String(localized: "Music controls setup")
+        window.styleMask = [.titled, .closable]
+        window.isReleasedWhenClosed = false
+        window.center()
+        mediaSetupWindow = window
         NSApp.activate(ignoringOtherApps: true)
-        mediaSetupWindow?.makeKeyAndOrderFront(nil)
+        window.makeKeyAndOrderFront(nil)
     }
     #endif
 

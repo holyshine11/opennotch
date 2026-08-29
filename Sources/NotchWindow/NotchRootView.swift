@@ -180,6 +180,11 @@ struct NotchRootView: View {
                 NSApp.activate(ignoringOtherApps: true)
                 openSettings()
             }
+            #if MEDIA_ENABLED
+            Button("Music controls setup…") {
+                NotificationCenter.default.post(name: .openNotchShowMediaSetup, object: nil)
+            }
+            #endif
             Button("About OpenNotch") {
                 NSApp.activate(ignoringOtherApps: true)
                 NSApp.orderFrontStandardAboutPanel(nil)

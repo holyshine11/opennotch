@@ -6,14 +6,20 @@ import SwiftUI
 struct MediaView: View {
     let controller: MediaController
     @Environment(\.notchHost) private var host
+    /// 한 번이라도 제어에 성공했거나 사용자가 건너뛰었으면 첫 실행 안내 카드를 접는다.
+    @AppStorage(PrefKey.mediaSetupDone) private var setupDone = false
 
     var body: some View {
         Group {
             switch controller.state {
             case .off: offView
             case .idle:
-                Text("Play something in Apple Music, or open YouTube or Spotify in your browser").font(.caption).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                if setupDone {
+                    Text("Play something in Apple Music, or open YouTube or Spotify in your browser").font(.caption).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                } else {
+                    setupCard
+                }
             case .nowPlaying(let np): nowPlayingView(np)
             case .readOnly(let title, let hint): readOnlyView(title: title, hint: hint)
             case .permissionDenied(let browser): permissionView(browser)
@@ -31,7 +37,22 @@ struct MediaView: View {
             Text("YouTube & YouTube Music").font(.caption).foregroundStyle(.secondary)
             // 켜는 순간 안내 창을 같이 연다 — 권한 프롬프트와 브라우저 토글을 한 화면에서 보게.
             Button("Use music controls") { controller.enableWithUserAction(); openGuide() }.buttonStyle(.bordered)
-            Button("How to set up…") { openGuide() }.buttonStyle(.link).font(.caption2)
+            Button("Setup guide…") { openGuide() }.buttonStyle(.link).font(.caption2)
+        }
+    }
+
+    /// 아직 아무 브라우저도 제어에 성공한 적이 없을 때: 무엇을 할 수 있는지와 다음 한 걸음만 보여 준다.
+    private var setupCard: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "music.note.list").font(.title2).foregroundStyle(.secondary)
+            Text("Control YouTube, Spotify web and Apple Music from here")
+                .font(.callout.bold()).multilineTextAlignment(.center)
+            Text("Browsers need a one-time setting — about a minute.")
+                .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            HStack(spacing: 10) {
+                Button("Set up…") { openGuide() }.buttonStyle(.borderedProminent).controlSize(.small)
+                Button("Skip") { setupDone = true }.buttonStyle(.link).font(.caption)
+            }
         }
     }
 
@@ -114,13 +135,14 @@ struct MediaView: View {
                 Text(name).font(.caption2).foregroundStyle(.secondary)
             }
             if hint != nil {
-                Text("Controls need “Allow JavaScript from Apple Events”").font(.caption2).foregroundStyle(.secondary)
+                Text("One browser setting away from full controls").font(.caption2).foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Button("Set up…") { openGuide() }.buttonStyle(.borderedProminent).controlSize(.small)
+                    Button("Show tab") { reveal() }.buttonStyle(.link).font(.caption2)
+                }
+            } else {
+                Button("Show tab") { reveal() }.buttonStyle(.link).font(.caption2)
             }
-            HStack(spacing: 10) {
-                if hint != nil { Button("How to set up…") { openGuide() } }
-                Button("Show tab") { reveal() }
-            }
-            .buttonStyle(.link).font(.caption2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -143,7 +165,7 @@ struct MediaView: View {
                 if let url = URL(string: Constants.automationPrivacySettingsURL) { NSWorkspace.shared.open(url) }
             }
             .buttonStyle(.bordered)
-            Button("How to set up…") { openGuide() }.buttonStyle(.link).font(.caption2)
+            Button("Setup guide…") { openGuide() }.buttonStyle(.link).font(.caption2)
         }
     }
 }
