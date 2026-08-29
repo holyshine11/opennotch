@@ -56,6 +56,8 @@ enum Constants {
     /// 손쉬운 사용 도우미(SetupAssistant): System Events UI 스크립팅의 대기 시간들.
     /// 스크립트 상한은 처음 실행 때 뜨는 자동화 권한 프롬프트에 사용자가 답할 시간까지 포함한다.
     static let assistScriptTimeout: TimeInterval = 30
+    static let assistScriptGrace: TimeInterval = 5          // Swift 쪽 대기 = 스크립트 상한 + 이 값
+    static let assistConfirmDelay: TimeInterval = 6         // 도우미가 끝난 뒤 초록 체크를 기다렸다가 카드를 되돌리는 시간
     static let assistActivateDelay: TimeInterval = 0.3
     static let assistMenuOpenDelay: TimeInterval = 0.25
     static let assistSettleDelay: TimeInterval = 0.6

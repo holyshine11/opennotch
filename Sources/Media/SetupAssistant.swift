@@ -39,7 +39,8 @@ enum SetupAssistant {
         guard browser.isRunning else { logger.notice("reveal \(browser.rawValue, privacy: .public): not running"); return .notFound }
         let script = browser.isSafari ? safariScript(browser) : chromiumScript(browser)
         let outcome: Outcome
-        switch await AppleScriptRunner.run(script, timeout: Constants.assistScriptTimeout, urgent: true) {
+        // 스크립트 자체의 `with timeout`이 먼저 끝나도록 Swift 쪽 상한은 조금 더 길게 — 첫 자동화 프롬프트를 기다리다 거짓 실패하지 않게.
+        switch await AppleScriptRunner.run(script, timeout: Constants.assistScriptTimeout + Constants.assistScriptGrace, urgent: true) {
         case .success(let out):
             switch out {
             case "ALREADYON": outcome = .alreadyOn
@@ -78,6 +79,7 @@ enum SetupAssistant {
 
     /// 보기 › 개발자 서브메뉴를 펼치고 토글의 체크 표시(AXMenuItemMarkChar)를 본다. 꺼져 있으면 한 번 눌러 보고, 다시 열어 확인한다.
     /// 크로미움이 클릭을 무시하면 두 번째 판에서 서브메뉴를 펼쳐 둔 채 LEFTOPEN을 돌려준다.
+    /// 토글을 이름으로 못 찾으면(다른 언어) 아무것도 누르지 않고 서브메뉴만 펼쳐 둔다 — 엉뚱한 항목을 실행하지 않게.
     /// `it`은 AppleScript 예약어라 루프 변수는 `mi`. 체크 표시가 없으면 `missing value`가 오므로 텍스트로 바꾸기 전에 걸러야 한다.
     static func chromiumScript(_ browser: BrowserKind) -> String {
         """
@@ -137,7 +139,7 @@ enum SetupAssistant {
                             if allowNames contains (name of mi as text) then set toggleItem to mi
                         end try
                     end repeat
-                    if toggleItem is missing value then set toggleItem to last item of subItems
+                    if toggleItem is missing value then return "LEFTOPEN"
                     if my markOf(toggleItem) is not "" then
                         perform action "AXCancel" of menu 1 of viewItem
                         if pass is 1 then return "ALREADYON"

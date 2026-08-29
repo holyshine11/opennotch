@@ -144,6 +144,7 @@ struct MediaSetupGuideView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
+            .disabled(assist[browser] == .running || assist[browser] == .waitingForPermission)
             Button("Show \(browser.displayName)") { browser.activate() }
         case .permissionDenied:
             Button("Open System Settings") {
@@ -162,9 +163,14 @@ struct MediaSetupGuideView: View {
         switch phase {
         case .consent:
             VStack(alignment: .leading, spacing: 8) {
-                Text("OpenNotch needs the macOS Accessibility permission to open \(browser.displayName)’s menu for you.")
-                    .font(.callout)
-                Text("It is used only to open this menu — nothing on your screen is read or recorded, and you can turn it off any time in System Settings.")
+                if browser.isSafari {
+                    Text("OpenNotch needs the macOS Accessibility permission to turn this on in Safari Settings for you (it also turns on “Show features for web developers” if that is still off).")
+                        .font(.callout)
+                } else {
+                    Text("OpenNotch needs the macOS Accessibility permission to open \(browser.displayName)’s menu for you.")
+                        .font(.callout)
+                }
+                Text("It is used only for this — nothing on your screen is read or recorded, and you can turn it off any time in System Settings.")
                     .font(.caption).foregroundStyle(.secondary)
                 Text("macOS doesn’t ask for this one automatically — you add OpenNotch to the list yourself. The next step shows where.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -240,6 +246,11 @@ struct MediaSetupGuideView: View {
         case .alreadyOn, .turnedOn:
             assist[browser] = .done
             bringGuideWindowFront()
+            // 초록 체크는 다음 probe가 올린다. 그래도 안 오면(탭이 닫혔거나 probe 실패) 카드를 되돌려 버튼을 다시 보여 준다.
+            Task {
+                try? await Task.sleep(for: .seconds(Constants.assistConfirmDelay))
+                if assist[browser] == .done { assist[browser] = nil }
+            }
         case .menuLeftOpen:
             assist[browser] = .clickTheItem   // 열린 메뉴에는 지금 물어도 답이 없다 — pollWhileMenuOpen이 맡는다
             return
@@ -259,7 +270,7 @@ struct MediaSetupGuideView: View {
             }
             guard !Task.isCancelled, assist[browser] == .clickTheItem else { continue }
             controller.retryNow(browser)
-            try? await Task.sleep(for: .seconds(Constants.mediaScriptTimeout + Constants.assistSettleDelay))
+            try? await Task.sleep(for: .seconds(Constants.assistConfirmDelay))
             if !Task.isCancelled, assist[browser] == .clickTheItem { assist[browser] = nil }
         }
     }

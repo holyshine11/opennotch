@@ -20,37 +20,12 @@ enum MenuTitles {
     static let view: [String] = ["View", "보기"]
     static let developer: [String] = ["Developer", "개발자 정보", "개발자"]
     static let allowJS: [String] = ["Allow JavaScript from Apple Events", "Apple Events의 자바스크립트 허용", "Apple 이벤트에서 JavaScript 허용"]
-    static let settings: [String] = ["Settings…", "설정…"]
-    /// 설정… 항목의 단축키 문자(⌘,). 이름을 못 찾을 때 언어와 무관하게 고르는 기준.
-    static let settingsShortcut: String = ","
     static let safariDeveloperTab: [String] = ["Developer", "개발자"]
     static let safariAdvancedTab: [String] = ["Advanced", "고급"]
     static let safariShowDevFeatures: [String] = ["Show features for web developers", "웹 개발자를 위한 기능 보기"]
     static let allowJSSafari: [String] = ["Allow JavaScript from Apple Events", "Apple 이벤트에서 JavaScript 허용"]
-    /// 이름으로 못 찾았을 때의 메뉴 막대 위치: 0 Apple, 1 앱, 2 파일, 3 편집, 4 보기.
-    static let appMenuIndex: Int = 1
+    /// 이름으로 못 찾았을 때의 보기 메뉴 위치(0부터: Apple, 앱, 파일, 편집, 보기).
     static let viewMenuIndex: Int = 4
-
-    /// 앞뒤 공백·대소문자·끝의 말줄임표("…", "...")를 무시하고 후보와 비교한다.
-    static func match(_ title: String?, _ candidates: [String]) -> Bool {
-        guard let title else { return false }
-        let normalized = normalize(title)
-        return candidates.contains { normalize($0) == normalized }
-    }
-
-    /// 이름이 조금 다를 때("Developer Tools" 등)까지 받아 주는 느슨한 비교.
-    static func contains(_ title: String?, _ candidates: [String]) -> Bool {
-        guard let title else { return false }
-        let normalized = normalize(title)
-        guard !normalized.isEmpty else { return false }
-        return candidates.contains { normalized.contains(normalize($0)) }
-    }
-
-    private static func normalize(_ title: String) -> String {
-        var text = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        while text.hasSuffix("…") || text.hasSuffix(".") { text.removeLast() }
-        return text.lowercased()
-    }
 }
 
 /// 미디어 소스. rawValue = 번들 ID. 브라우저(`isBrowser`)는 `OpenNotch.entitlements`의 temporary-exception 목록과,
