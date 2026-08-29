@@ -58,8 +58,8 @@ struct GeneralSettingsView: View {
                 Button("Clear history") { NotificationCenter.default.post(name: .openNotchClearClipboard, object: nil) }
             }
             #if MEDIA_ENABLED
-            Section("YouTube") {
-                Toggle("Control YouTube in your browser", isOn: $mediaEnabled)
+            Section("Music") {
+                Toggle("Control YouTube, Spotify web, and Apple Music", isOn: $mediaEnabled)
                 ForEach(BrowserKind.allCases.filter(\.isInstalled), id: \.rawValue) { browser in
                     Toggle(browser.displayName, isOn: browserBinding(browser)).disabled(!mediaEnabled)
                 }

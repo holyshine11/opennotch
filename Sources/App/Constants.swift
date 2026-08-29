@@ -34,6 +34,7 @@ enum Constants {
     static let mediaBrowserBackoff: TimeInterval = 15
     static let mediaTickInterval: TimeInterval = 0.5
     static let mediaCommandRefreshDelay: TimeInterval = 0.5
+    static let mediaArtworkRetryDelay: TimeInterval = 0.7
     static let mediaArtworkMaxBytes: Int = 200_000
     static let mediaArtworkTargetPixels: Int = 256   // mediaArtworkSize @2x
     static let mediaArtworkSize: CGFloat = 128       // = panelBodyHeight − 페인 패딩(6+10) − MediaView 패딩(8×2): 본문 높이를 꽉 채운다
@@ -41,6 +42,7 @@ enum Constants {
     static let mediaSeekHitHeight: CGFloat = 14
     static let youtubeMusicHost: String = "music.youtube.com"
     static let youtubeWatchPath: String = "youtube.com/watch"
+    static let spotifyWebHost: String = "open.spotify.com"
     static let automationPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
     static let pasteboardPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Pasteboard"
 }

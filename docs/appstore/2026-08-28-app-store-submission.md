@@ -28,7 +28,7 @@ OpenNotch는 MacBook 노치를 작은 제어 센터로 바꿔 주는 무료 오�
 • AirDrop — 파일을 노치로 끌어다 놓으면 바로 AirDrop 보내기 창이 열립니다.
 • 셸프 — 나중에 쓸 파일을 최대 12개까지 노치에 잠시 보관하고, 다시 꺼내 쓰거나 훑어보기로 확인합니다.
 • 클립보드 기록 — 복사한 텍스트·이미지·파일을 기억하고 검색해서 다시 복사합니다.
-• YouTube / YouTube Music — 브라우저에서 재생 중인 곡의 제목·아트워크를 보여 주고 재생·일시정지·이전·다음을 제어합니다. (Safari, Chrome, Edge, Arc, Brave, Whale)
+• 음악 — YouTube / YouTube Music / Spotify 웹 플레이어(Safari, Chrome, Edge, Arc, Brave, Whale)와 Apple Music에서 재생 중인 곡의 제목·아트워크를 보여 주고 재생·일시정지·이전·다음·탐색을 제어합니다.
 
 노치가 없는 Mac에서는 메뉴 막대 중앙에 가상 노치를 표시합니다. 전역 단축키 ⌃⌥N으로도 열 수 있습니다.
 
@@ -40,7 +40,7 @@ OpenNotch turns the MacBook notch into a tiny control center. Click the notch or
 • AirDrop — drop a file on the notch to open the AirDrop sender right away.
 • Shelf — park up to 12 files in the notch for later; drag them back out or Quick Look them.
 • Clipboard history — remembers text, images and files you copy; search and copy again.
-• YouTube / YouTube Music — shows what is playing in your browser with artwork, and offers play/pause/previous/next. (Safari, Chrome, Edge, Arc, Brave, Whale)
+• Music — shows what is playing in YouTube / YouTube Music / Spotify web player (Safari, Chrome, Edge, Arc, Brave, Whale) or Apple Music, with artwork, and offers play/pause/previous/next/seek.
 
 On Macs without a notch a virtual notch appears in the middle of the menu bar. The global shortcut ⌃⌥N also opens the panel.
 
@@ -49,11 +49,15 @@ No network, no analytics, no accounts. Everything stays on this Mac. Free and op
 ## 3. Entitlement Usage Information (심사용, en)
 **com.apple.security.temporary-exception.apple-events** — targets: `com.apple.Safari`, `com.google.Chrome`, `com.microsoft.edgemac`, `company.thebrowser.Browser`, `com.brave.Browser`, `com.naver.Whale`.
 
-OpenNotch's media feature shows what is playing in the user's browser and offers play/pause/next/previous. macOS provides no public API for "Now Playing" information, so the app asks the browser through Apple Events for the URL and title of open tabs and, in tabs on youtube.com / music.youtube.com only, runs a small read-only script to get the title, artist, artwork and playback state. Commands are limited to play, pause, next and previous on that tab. The feature is **off by default**; the first Apple Event is sent only after the user presses "Use YouTube controls" and answers the system automation prompt. No Apple Events are sent while the panel is collapsed, and the app never launches a browser. No Finder or System Events targets. No data leaves the Mac.
+OpenNotch's media feature shows what is playing in the user's browser and offers play/pause/next/previous/seek. macOS provides no public API for "Now Playing" information, so the app asks the browser through Apple Events for the URL and title of open tabs and, in tabs on youtube.com / music.youtube.com / open.spotify.com only, runs a small read-only script to get the title, artist, artwork and playback state. Commands are limited to play, pause, next, previous and seek on that tab. The first Apple Event is sent only after the user answers the system automation prompt. No Apple Events are sent while the panel is collapsed, and the app never launches a browser. No Finder or System Events targets. No data leaves the Mac.
+
+**com.apple.security.scripting-targets** — `com.apple.Music`: `com.apple.Music.playback`, `com.apple.Music.library.read`.
+
+Used to show the current Apple Music track (name, artist, duration, position, artwork) and to send play/pause/next/previous/seek to the Music app, through the access groups Music.app declares in its scripting definition. Only sent while Music is already running and the panel is open.
 
 ## 4. Review Notes (심사 노트, en)
 - **Where the app lives:** OpenNotch is a menu-bar/notch utility (LSUIElement). On a MacBook with a notch, click the notch. On other Macs a black virtual notch is drawn at the top center of the menu bar — click it, or press ⌃⌥N, or launch the app again to open the panel.
-- **YouTube controls (optional):** open youtube.com or music.youtube.com in Safari/Chrome/Edge/Arc/Brave/Whale, then press "Use YouTube controls" in the panel and allow the automation prompt. Full controls additionally require the browser's own switch "Allow JavaScript from Apple Events" (Chrome-family: View › Developer; Safari: Develop menu). Without that switch the app shows only the tab title (read-only mode) — this is expected behaviour, not a bug.
+- **Music controls:** play something in Apple Music, or open youtube.com / music.youtube.com / open.spotify.com in Safari/Chrome/Edge/Arc/Brave/Whale, then open the panel and allow the automation prompt. Full controls additionally require the browser's own switch "Allow JavaScript from Apple Events" (Chrome-family: View › Developer; Safari: Develop menu). Without that switch the app shows only the tab title (read-only mode) — this is expected behaviour, not a bug.
 - **Clipboard:** on macOS 15.4+ the first read triggers the system pasteboard prompt; if denied, the panel shows a button to System Settings › Privacy & Security › Pasteboard.
 - **AirDrop:** drag any file onto the notch and drop it on the "AirDrop" zone. Requires Wi‑Fi and Bluetooth.
 - **Quit:** menu bar icon › Quit OpenNotch, or ⚙︎ in the panel › Quit.
@@ -78,7 +82,7 @@ OpenNotch's media feature shows what is playing in the user's browser and offers
 
 ## 8. 제출 전 체크리스트
 - [ ] Release 아카이브: `xcodebuild archive -project OpenNotch.xcodeproj -scheme OpenNotch -configuration Release -archivePath build/OpenNotch.xcarchive`
-- [ ] `scripts/review-check.sh <OpenNotch.app>` → entitlements 5개, 사설 심볼 없음
+- [ ] `scripts/review-check.sh <OpenNotch.app>` → entitlements 6개(scripting-targets 포함), 사설 심볼 없음
 - [ ] App Store Connect에 앱 생성(번들 ID·이름), 위 텍스트 ko/en 입력
 - [ ] PrivacyInfo.xcprivacy: 수집 없음, UserDefaults CA92.1 (이미 포함)
 - [ ] 개인정보 URL 200 응답 확인

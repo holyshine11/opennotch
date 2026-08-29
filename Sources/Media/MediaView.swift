@@ -12,7 +12,7 @@ struct MediaView: View {
             switch controller.state {
             case .off: offView
             case .idle:
-                Text("Open YouTube or YouTube Music in your browser").font(.caption).foregroundStyle(.secondary)
+                Text("Play something in Apple Music, or open YouTube or Spotify in your browser").font(.caption).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             case .nowPlaying(let np): nowPlayingView(np)
             case .readOnly(let title, let hint): readOnlyView(title: title, hint: hint)
@@ -30,7 +30,7 @@ struct MediaView: View {
         VStack(spacing: 6) {
             Text("YouTube & YouTube Music").font(.caption).foregroundStyle(.secondary)
             // 켜는 순간 안내 창을 같이 연다 — 권한 프롬프트와 브라우저 토글을 한 화면에서 보게.
-            Button("Use YouTube controls") { controller.enableWithUserAction(); openGuide() }.buttonStyle(.bordered)
+            Button("Use music controls") { controller.enableWithUserAction(); openGuide() }.buttonStyle(.bordered)
             Button("How to set up…") { openGuide() }.buttonStyle(.link).font(.caption2)
         }
     }
@@ -50,7 +50,7 @@ struct MediaView: View {
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Color.white.opacity(0.12), in: Capsule())
                         }
-                        .buttonStyle(.plain).disabled(controller.sourceCount < 2).help("Switch browser")
+                        .buttonStyle(.plain).disabled(controller.sourceCount < 2).help("Switch source")
                     }
                 }
                 Text([np.artist, np.siteName].compactMap { $0 }.joined(separator: " · "))

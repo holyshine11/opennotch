@@ -187,12 +187,12 @@
         }
       }
     },
-    "Control YouTube in your browser": {
+    "Control YouTube, Spotify web, and Apple Music": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "브라우저의 YouTube 제어"
+            "value": "YouTube·Spotify 웹·Apple Music 제어"
           }
         }
       }
@@ -449,6 +449,16 @@
         }
       }
     },
+    "Music": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음악"
+          }
+        }
+      }
+    },
     "Needs a one-time browser setting. The guide shows where.": {
       "localizations": {
         "ko": {
@@ -569,16 +579,6 @@
         }
       }
     },
-    "Open YouTube or YouTube Music in your browser": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "브라우저에서 YouTube 또는 YouTube Music을 열어 주세요"
-          }
-        }
-      }
-    },
     "Open a YouTube tab to check": {
       "localizations": {
         "ko": {
@@ -615,6 +615,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "OpenNotch"
+          }
+        }
+      }
+    },
+    "Play something in Apple Music, or open YouTube or Spotify in your browser": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Music에서 재생하거나, 브라우저에서 YouTube 또는 Spotify를 열어 주세요"
           }
         }
       }
@@ -819,12 +829,12 @@
         }
       }
     },
-    "Switch browser": {
+    "Switch source": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "브라우저 전환"
+            "value": "소스 전환"
           }
         }
       }
@@ -839,12 +849,12 @@
         }
       }
     },
-    "Use YouTube controls": {
+    "Use music controls": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "YouTube 제어 사용하기"
+            "value": "음악 제어 사용하기"
           }
         }
       }
@@ -875,16 +885,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "패널의 ⚙︎ 버튼에서 설정을 열 수 있습니다 (⌃⌥N 또는 OpenNotch를 다시 실행하면 패널이 열립니다)."
-          }
-        }
-      }
-    },
-    "YouTube": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "YouTube"
           }
         }
       }

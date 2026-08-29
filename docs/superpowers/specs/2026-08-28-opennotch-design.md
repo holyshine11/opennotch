@@ -1,4 +1,4 @@
-# OpenNotch 설계 스펙 (v1.5)
+# OpenNotch 설계 스펙 (v1.6)
 
 작성 2026-08-28 · 상태: 승인됨(v1.1) → v1.2는 P1 최종 리뷰 반영(드롭 거절 이벤트·reopen·클립보드 확장·가상 노치 숨김) · 근거: `docs/strategy/2026-08-28-notch-app-strategy.md` · v1.3: P2 구현에 맞춰 §4.3·§4.6 갱신(셸프 access 유지 모델, 서비스 시그니처)
 
@@ -19,6 +19,7 @@ MacBook 노치를 클릭(또는 설정 시 호버)하면 펼쳐지는 **무료·
 | D7 | 저장소 | GitHub 공개, `main` 브랜치, 기능별 브랜치 → PR |
 | D8 | 코드 출처 | 참고 저장소(NotchDrop 등)는 **레시피만 참고, 코드 복사 금지** → 서드파티 고지 파일 불필요 |
 | D9 | Swift enum | 전역 enum 금지 규칙에서 Swift 예외 승인됨(2026-08-28, quality-gate 반영). 수치 상수는 `Constants.swift` 한곳에 모은다 |
+| D11 | 미디어 소스 확장(2026-08-29) | Apple Music = `scripting-targets`(정식, 임시 예외 아님). Spotify = 설치형 제외(사용자 결정: Mac 지원 중단 안내 확인), `open.spotify.com` 웹 플레이어를 브라우저 경로에 추가. 근거 `docs/strategy/2026-08-29-spotify-integration-research.md` |
 | D10 | 린트(quality-gate) 호환 | 전역 훅 실측 결과에 맞춘 코딩 규칙: ① 수치 상수는 반드시 타입 명시 + 서술적 이름(`static let hoverDelay: TimeInterval = 0.4` ✓, `let timeout = 3.0` ✗) ② 소스에 `https://` 리터럴 금지 — JS/AppleScript는 `location.hostname`·`contains "youtube.com"`처럼 스킴 없는 호스트만 비교, GitHub·개인정보 URL은 Info.plist 키로 두고 런타임에 읽음 ③ 계정·키·비밀값 리터럴 없음(해당 없음) |
 
 ## 3. 제품 동작 (사용자 관점)
@@ -176,6 +177,8 @@ init(clock: any Clock<Duration> = ContinuousClock())
 - `MediaError.classify(code:message:) -> MediaState`: `-1743` → `.permissionDenied(browser)`(버튼: 시스템 설정 > 개인정보 보호 > 자동화); JS 비활성 → `.jsDisabled(browser)`(브라우저별 안내: Chrome/Edge/Arc/Brave = 보기 > 개발자 > Apple Events의 JavaScript 허용, Safari = 설정 > 고급 > 웹 개발자용 기능 표시 → 개발자 > Apple Events의 JavaScript 허용); `-600` → `.idle`; 그 외 → 로그 + 30초 백오프. JS 비활성 오류 코드는 크로미움 계열 **12**(2026-08-28 Whale 4.39에서 채집, 메시지 "AppleScript를 통한 자바스크립트 실행 기능이 꺼져 있습니다…"). 구현(2026-08-29 개정): 타임아웃(-1712/-1)은 일시 오류로 보고 같은 탭이면 직전 재생 정보를 유지·안내 없음, 크로미움 12(Safari는 타임아웃 외 전부)만 토글 꺼짐으로 안내한다. 명령은 probe보다 우선순위 높은 OperationQueue로 끼어들고, 명령 전에 시작된 probe 결과는 세대 카운터로 버린다. 안내는 `MediaSetupGuideView` 창(브라우저별 단계 + 실시간 토글 상태). 탭 URL·제목 열거는 이 토글 없이도 된다(자동화 권한만 필요).
 - 읽기 전용 모드: JS 실패 시 탭 제목(`"제목 - YouTube"`, `"제목 - YouTube Music"`)만 표시, 컨트롤 비활성.
 - 사이트 배지는 텍스트("YouTube Music")만. YouTube 로고 에셋을 번들에 넣지 않는다.
+- **Apple Music 소스(v1.6)**: `BrowserKind.appleMusic = "com.apple.Music"`(브라우저가 아니지만 같은 후보·우선순위·전환 로직을 탄다, `isBrowser == false`). Entitlements에 `com.apple.security.scripting-targets = { com.apple.Music: [com.apple.Music.playback, com.apple.Music.library.read] }` — Music.sdef 실측: 재생 상태·위치·명령·`current track` 속성은 `playback`, `artwork`의 `raw data`는 `library.read`. temporary-exception 목록은 `BrowserKind.browsers`(6개)만. probe는 Music이 실행 중일 때만, `player state`가 stopped면 `NONE`. 출력 `MUSIC\t재생중\t위치\t길이\t제목\t아티스트\tpersistentID` → Swift가 `NowPlaying(site: "apple_music")`으로 조립. 아트워크는 persistent ID가 바뀔 때 1회 `raw data of artwork 1 of current track`(네트워크 없음). seek = `set player position to duration × f`. 안내 창에는 나오지 않는다(JS 토글 없음). 설정 토글 목록에는 "Apple Music"으로 포함.
+- **Spotify 웹 플레이어(v1.6)**: `open.spotify.com` 탭도 probe 대상. `<video>`가 없으므로 `navigator.mediaSession` 메타데이터·재생 상태 + 진행 표시 DOM에서 위치/길이, 제어는 `data-testid` 버튼 클릭. 상세 셀렉터는 로그인 실측 후 확정. 설치형 Spotify(`com.spotify.client`)는 넣지 않는다.
 
 ### 4.9 설정 키 (`Preferences.swift`, `@AppStorage`)
 `hoverToOpen`(true) · `launchAtLogin`(false, `SMAppService.status`와 동기화) · `showMenuBarIcon`(true) · `hotkeyEnabled`(true) · `showVirtualNotch`(true) · `clipboardEnabled`(true) · `clipboardLimit`(100) · `firstLaunchDone`(false) · [MEDIA] `mediaEnabled`(true) · `disabledBrowsers`("" — 끈 브라우저 번들 ID를 쉼표로 이은 문자열, `@AppStorage` 호환)

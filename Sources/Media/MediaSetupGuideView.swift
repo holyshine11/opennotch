@@ -12,7 +12,7 @@ extension Notification.Name {
 struct MediaSetupGuideView: View {
     let controller: MediaController
 
-    private var browsers: [BrowserKind] { BrowserKind.allCases.filter(\.isInstalled) }
+    private var browsers: [BrowserKind] { BrowserKind.browsers.filter(\.isInstalled) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

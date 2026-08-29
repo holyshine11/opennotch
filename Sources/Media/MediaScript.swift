@@ -36,6 +36,8 @@ enum MediaScript {
         var title: String
         var jsErrorCode: Int?
         var json: String
+        /// Apple Music만: persistent ID. 바뀔 때만 아트워크를 다시 읽는다.
+        var trackID: String? = nil
     }
 
     /// AppleScript 문자열 리터럴 안에 넣기 위한 이스케이프.
@@ -69,15 +71,21 @@ enum MediaScript {
           .finally(() => { window.__onArtBusy = false; });
       }
       const ms = navigator.mediaSession && navigator.mediaSession.playbackState;
-      const playing = (ms === 'playing' || ms === 'paused') ? ms === 'playing' : !!(v && !v.paused && !v.ended);
+      const sp = location.host === '__SPOTIFY_HOST__';
+      const q = s => document.querySelector(s);
+      const clock = t => { const p = (t || '').trim().split(':').map(Number); return p.length && p.every(n => !isNaN(n)) ? p.reduce((a, n) => a * 60 + n, 0) : 0; };
+      const range = sp ? q('[data-testid="playback-progressbar"] input[type=range]') : null;
+      const playing = sp ? document.title.includes(' • ') : (ms === 'playing' || ms === 'paused') ? ms === 'playing' : !!(v && !v.paused && !v.ended);
+      const position = sp ? clock((q('[data-testid="playback-position"]') || {}).textContent) : (v && isFinite(v.currentTime)) ? v.currentTime : 0;
+      const duration = sp ? (range ? Number(range.max) / 1000 : clock((q('[data-testid="playback-duration"]') || {}).textContent)) : (v && isFinite(v.duration)) ? v.duration : 0;
       return JSON.stringify({
         title: (md && md.title) || document.title,
         artist: (md && md.artist) || null,
         artwork: (cache && art && cache.src === art.src) ? cache.data : null,
         playing: playing,
-        position: (v && isFinite(v.currentTime)) ? v.currentTime : 0,
-        duration: (v && isFinite(v.duration)) ? v.duration : 0,
-        site: location.host.startsWith('music.') ? 'youtube_music' : 'youtube'
+        position: position,
+        duration: duration,
+        site: sp ? 'spotify' : location.host.startsWith('music.') ? 'youtube_music' : 'youtube'
       });
     })()
     """#
@@ -88,6 +96,19 @@ enum MediaScript {
       const q = s => document.querySelector(s);
       const cmd = '__CMD__';
       const arg = __ARG__;
+      if (location.host === '__SPOTIFY_HOST__') {
+        const playing = document.title.includes(' • ');
+        const inp = q('[data-testid="playback-progressbar"] input[type=range]');
+        if (cmd === 'seek' && inp) {
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(inp, Math.round(Number(inp.max) * arg));
+          inp.dispatchEvent(new Event('input', {bubbles: true}));
+          inp.dispatchEvent(new Event('change', {bubbles: true}));
+        }
+        else if ((cmd === 'play' && !playing) || (cmd === 'pause' && playing)) q('[data-testid="control-button-playpause"]')?.click();
+        else if (cmd === 'next') q('[data-testid="control-button-skip-forward"]')?.click();
+        else if (cmd === 'prev') q('[data-testid="control-button-skip-back"]')?.click();
+        return 'ok';
+      }
       const playBtn = () => (q('#play-pause-button') || q('.ytp-play-button'))?.click();
       if (cmd === 'seek' && v && isFinite(v.duration)) v.currentTime = arg * v.duration;
       else if (cmd === 'play' && v) { const p = v.play(); if (p && p.catch) p.catch(() => playBtn()); }
@@ -102,13 +123,16 @@ enum MediaScript {
         oneLine(probeJS)
             .replacingOccurrences(of: "__ART_PX__", with: "\(Constants.mediaArtworkTargetPixels)")
             .replacingOccurrences(of: "__ART_MAX__", with: "\(Constants.mediaArtworkMaxBytes)")
+            .replacingOccurrences(of: "__SPOTIFY_HOST__", with: Constants.spotifyWebHost)
     }
+    static var commandJSOneLine: String { oneLine(commandJS).replacingOccurrences(of: "__SPOTIFY_HOST__", with: Constants.spotifyWebHost) }
 
     // MARK: AppleScript
 
-    /// 브라우저의 모든 탭을 훑어 YouTube 탭을 찾고 JS probe를 실행한다. 우선순위: 재생 중 > `prefer`(마지막으로 제어한 탭) > 첫 탭.
+    /// 브라우저의 모든 탭을 훑어 YouTube·Spotify 웹 탭을 찾고 JS probe를 실행한다. 우선순위: 재생 중 > `prefer`(마지막으로 제어한 탭) > 첫 탭.
     /// JS 실패는 오류 코드로 실어 보낸다.
     static func probe(browser: BrowserKind, prefer: (window: Int, tab: Int)? = nil) -> String {
+        if browser == .appleMusic { return musicProbe }
         let js = escape(probeJSOneLine)
         let run = browser.isSafari ? "do JavaScript \"\(js)\" in t" : "execute t javascript \"\(js)\""
         let titleProp = browser.isSafari ? "name" : "title"
@@ -125,7 +149,7 @@ enum MediaScript {
                     repeat with ti from 1 to count of tabs of window wi
                         set t to tab ti of window wi
                         set u to URL of t
-                        if u contains "\(Constants.youtubeMusicHost)" or u contains "\(Constants.youtubeWatchPath)" then
+                        if u contains "\(Constants.youtubeMusicHost)" or u contains "\(Constants.youtubeWatchPath)" or u contains "\(Constants.spotifyWebHost)" then
                             set errNum to ""
                             set jsOut to ""
                             try
@@ -148,7 +172,8 @@ enum MediaScript {
     }
 
     static func command(browser: BrowserKind, window: Int, tab: Int, _ cmd: Command) -> String {
-        let js = escape(oneLine(commandJS).replacingOccurrences(of: "__CMD__", with: cmd.name)
+        if browser == .appleMusic { return musicCommand(cmd) }
+        let js = escape(commandJSOneLine.replacingOccurrences(of: "__CMD__", with: cmd.name)
             .replacingOccurrences(of: "__ARG__", with: String(cmd.argument)))
         let target = "tab \(tab) of window \(window)"
         let run = browser.isSafari ? "do JavaScript \"\(js)\" in \(target)" : "execute \(target) javascript \"\(js)\""
@@ -163,6 +188,7 @@ enum MediaScript {
 
     /// 브라우저를 앞으로 가져오고 해당 탭을 활성화한다(JS 불필요).
     static func activate(browser: BrowserKind, window: Int, tab: Int) -> String {
+        if browser == .appleMusic { return "tell application id \"\(browser.rawValue)\" to activate" }
         let select = browser.isSafari
             ? "set current tab of window \(window) to tab \(tab) of window \(window)"
             : "set active tab index of window \(window) to \(tab)"
@@ -186,6 +212,65 @@ enum MediaScript {
         """
     }
 
+    // MARK: Apple Music (탭·JS 없음, Music 사전 직접)
+
+    /// 한 줄 `MUSIC\t재생중\t위치\t길이\t제목\t아티스트\tpersistentID`. 멈춤(stopped)이면 `NONE`.
+    /// 라디오(URL track)는 길이·위치가 `missing value`라 0으로 바꾼다(문자열에 그대로 붙이면 결과가 리스트로 바뀌어 파싱 실패).
+    /// **`set t to current track` 뒤 `name of t` 금지** — 저장된 참조는 `URL track id … of source id …`로 풀리고, 샌드박스 scripting-targets는
+    /// 이 경로(sdef 포함 관계에 없음)를 권한 위반(-10004)으로 막는다. 매번 `current track`을 거치면 통과한다(2026-08-29 샌드박스 도구로 실측).
+    /// 실행 중일 때만 보낸다 — `tell application`은 꺼진 앱을 실행시킨다.
+    static let musicProbe: String = """
+        set sep to ASCII character 9
+        with timeout of \(Int(Constants.mediaScriptTimeout)) seconds
+        tell application id "\(BrowserKind.appleMusic.rawValue)"
+            if player state is stopped then return "NONE"
+            tell current track to set {n, a, d, pid} to {name, artist, duration, persistent ID}
+            if d is missing value then set d to 0
+            set p to player position
+            if p is missing value then set p to 0
+            return "MUSIC" & sep & (player state is playing) & sep & p & sep & d & sep & n & sep & a & sep & pid
+        end tell
+        end timeout
+        """
+
+    /// 현재 트랙의 원본 아트워크 바이트(JPEG/PNG). 없으면 빈 문자열.
+    static let musicArtwork: String = """
+        with timeout of \(Int(Constants.mediaScriptTimeout)) seconds
+        tell application id "\(BrowserKind.appleMusic.rawValue)"
+            if (count of artworks of current track) is 0 then return ""
+            return raw data of artwork 1 of current track
+        end tell
+        end timeout
+        """
+
+    static func musicCommand(_ cmd: Command) -> String {
+        let body = switch cmd {
+        case .play: "play"
+        case .pause: "pause"
+        case .next: "next track"
+        case .prev: "previous track"
+        case .seek: "set d to duration of current track\n            if d is not missing value then set player position to d * \(cmd.argument)"
+        }
+        return """
+        with timeout of \(Int(Constants.mediaScriptTimeout)) seconds
+        tell application id "\(BrowserKind.appleMusic.rawValue)"
+            \(body)
+        end tell
+        end timeout
+        """
+    }
+
+    /// `MUSIC` 줄을 브라우저 probe와 같은 `ProbeResult`로 맞춘다(창·탭 0, JSON은 Swift에서 조립).
+    static func parseMusic(_ parts: [String]) -> ProbeResult? {
+        guard parts.count == 7 else { return nil }
+        let np = NowPlaying(title: parts[4], artist: parts[5].isEmpty ? nil : parts[5], artwork: nil,
+                            playing: parts[1] == "true", position: Double(parts[2]) ?? 0, duration: Double(parts[3]) ?? 0,
+                            site: NowPlaying.appleMusicSite)
+        guard let data = try? JSONEncoder().encode(np) else { return nil }
+        return ProbeResult(window: 0, tab: 0, url: "", title: parts[4], jsErrorCode: nil,
+                           json: String(decoding: data, as: UTF8.self), trackID: parts[6])
+    }
+
     // MARK: 오류 분류
 
     /// 크로미움 계열이 "Apple Events의 JavaScript 허용"이 꺼져 있을 때 돌려주는 코드(2026-08-28 Whale 4.39·Chrome에서 채집).
@@ -205,6 +290,7 @@ enum MediaScript {
 
     static func parseProbe(_ output: String) -> ProbeResult? {
         let parts = output.split(separator: "\t", maxSplits: 6, omittingEmptySubsequences: false).map(String.init)
+        if parts.first == "MUSIC" { return parseMusic(parts) }
         guard parts.count == 7, parts[0] == "FOUND", let w = Int(parts[1]), let t = Int(parts[2]) else { return nil }
         return ProbeResult(window: w, tab: t, url: parts[3], title: parts[4], jsErrorCode: Int(parts[5]), json: parts[6])
     }
@@ -229,7 +315,17 @@ struct NowPlaying: Codable, Equatable, Sendable {
     var duration: Double
     var site: String
 
-    var siteName: String { site == "youtube_music" ? "YouTube Music" : "YouTube" }
+    static let appleMusicSite = "apple_music"
+
+    /// 아티스트 옆 배지. Apple Music은 소스 이름이 이미 "Apple Music"이라 비운다.
+    var siteName: String? {
+        switch site {
+        case "youtube_music": "YouTube Music"
+        case "spotify": "Spotify"
+        case Self.appleMusicSite: nil
+        default: "YouTube"
+        }
+    }
 
     var artworkData: Data? { artwork.flatMap(Self.decodeArtwork) }
 

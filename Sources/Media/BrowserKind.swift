@@ -1,6 +1,7 @@
 import AppKit
 
-/// 지원 브라우저. rawValue = 번들 ID. `OpenNotch.entitlements`의 temporary-exception 목록과 정확히 같아야 한다(EntitlementsTests).
+/// 미디어 소스. rawValue = 번들 ID. 브라우저(`isBrowser`)는 `OpenNotch.entitlements`의 temporary-exception 목록과,
+/// Apple Music은 `scripting-targets` 키와 정확히 같아야 한다(EntitlementsTests).
 /// 순수 데이터라 `#if MEDIA_ENABLED` 밖에 둔다(테스트 타깃에서도 컴파일).
 enum BrowserKind: String, CaseIterable, Sendable {
     case safari = "com.apple.Safari"
@@ -9,6 +10,8 @@ enum BrowserKind: String, CaseIterable, Sendable {
     case arc = "company.thebrowser.Browser"
     case brave = "com.brave.Browser"
     case whale = "com.naver.Whale"
+    /// 브라우저가 아니지만 같은 후보·우선순위·전환 로직을 탄다. 탭·JS 없이 Music 사전으로 직접 읽는다.
+    case appleMusic = "com.apple.Music"
 
     var displayName: String {
         switch self {
@@ -18,8 +21,12 @@ enum BrowserKind: String, CaseIterable, Sendable {
         case .arc: "Arc"
         case .brave: "Brave"
         case .whale: "Whale"
+        case .appleMusic: "Apple Music"
         }
     }
+
+    var isBrowser: Bool { self != .appleMusic }
+    static var browsers: [BrowserKind] { allCases.filter(\.isBrowser) }
 
     var isSafari: Bool { self == .safari }
     var isRunning: Bool { !NSRunningApplication.runningApplications(withBundleIdentifier: rawValue).isEmpty }
@@ -28,6 +35,7 @@ enum BrowserKind: String, CaseIterable, Sendable {
     /// "Apple Events의 JavaScript 허용"을 켜는 순서. 메뉴 이름은 실제 한국어 UI에서 채집(2026-08-29: Chrome·Whale 모두 보기 › 개발자 정보).
     var setupSteps: [String] {
         switch self {
+        case .appleMusic: []
         case .safari:
             [String(localized: "Safari menu › Settings… (⌘,) › Advanced tab › turn on “Show features for web developers” at the bottom"),
              String(localized: "In the new “Developer” tab, check “Allow JavaScript from Apple Events”")]
@@ -42,6 +50,7 @@ enum BrowserKind: String, CaseIterable, Sendable {
     /// Chrome·Whale 한국어 UI는 "개발자 정보", Edge 등은 "개발자"라 키를 나눈다.
     var menuPath: [String] {
         switch self {
+        case .appleMusic: []
         case .safari:
             [String(localized: "Safari"), String(localized: "Settings… (⌘,)"), String(localized: "Developer (Safari tab)"),
              String(localized: "Allow JavaScript from Apple Events (Safari)")]

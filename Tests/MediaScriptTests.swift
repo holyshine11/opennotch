@@ -54,6 +54,45 @@ import Testing
         #expect(MediaScript.parseProbe("FOUND\t1") == nil)
     }
 
+    @Test func appleMusicScriptsAndParsing() throws {
+        let probe = MediaScript.probe(browser: .appleMusic)
+        #expect(probe.contains(#"tell application id "com.apple.Music""#) && probe.contains("tell current track to set {n, a, d, pid}"))
+        // 저장된 트랙 참조(`of t`)로 다시 접근하면 샌드박스가 -10004로 막는다 — 항상 `current track`을 거친다.
+        #expect(!probe.contains(" of t") && !MediaScript.musicArtwork.contains(" of t"))
+        #expect(!probe.contains("javascript") && probe.contains("with timeout of"))
+        #expect(MediaScript.command(browser: .appleMusic, window: 0, tab: 0, .next).contains("next track"))
+        #expect(MediaScript.command(browser: .appleMusic, window: 0, tab: 0, .seek(0.5)).contains("if d is not missing value then set player position to d * 0.5"))
+        #expect(MediaScript.activate(browser: .appleMusic, window: 0, tab: 0) == #"tell application id "com.apple.Music" to activate"#)
+        #expect(MediaScript.musicArtwork.contains("raw data of artwork 1 of current track"))
+
+        // AppleScript는 1만 이상 실수를 "1.0E+4"로 돌려준다.
+        let r = try #require(MediaScript.parseProbe("MUSIC\ttrue\t12.5\t1.0E+4\tSong\tArtist\tABC123"))
+        #expect(r.trackID == "ABC123" && r.title == "Song" && r.window == 0 && r.jsErrorCode == nil)
+        let np = try JSONDecoder().decode(NowPlaying.self, from: Data(r.json.utf8))
+        #expect(np.playing && np.position == 12.5 && np.duration == 10000 && np.artist == "Artist" && np.site == NowPlaying.appleMusicSite)
+        #expect(np.siteName == nil)
+        #expect(MediaScript.parseProbe("MUSIC\tfalse\t0\t0\tSong\t\tID")?.trackID == "ID")
+        #expect(MediaScript.parseProbe("MUSIC\ttrue") == nil)
+        #expect(BrowserKind.browsers.count == BrowserKind.allCases.count - 1 && !BrowserKind.appleMusic.isBrowser)
+        #expect(BrowserKind.appleMusic.setupSteps.isEmpty && BrowserKind.appleMusic.menuPath.isEmpty)
+    }
+
+    @Test func spotifyWebIsProbedThroughTheBrowserPath() throws {
+        // 2026-08-29 Whale 실측: <video> 없음, mediaSession.playbackState "none", 제목은 재생 중 "제목 • 아티스트"/일시정지 시 "Spotify - Web Player…",
+        // 진행 바 input[type=range]의 max=길이(ms), React setter + input/change 이벤트로 seek.
+        let probe = MediaScript.probe(browser: .whale)
+        #expect(probe.contains(#"u contains "open.spotify.com""#))
+        let js = MediaScript.probeJSOneLine
+        #expect(js.contains("location.host === 'open.spotify.com'") && !js.contains("__SPOTIFY_HOST__"))
+        #expect(js.contains("playback-progressbar") && js.contains("' • '") && js.contains("'spotify'"))
+        let cmd = MediaScript.command(browser: .chrome, window: 1, tab: 1, .seek(0.5))
+        #expect(cmd.contains("control-button-playpause") && cmd.contains("HTMLInputElement.prototype") && !cmd.contains("__SPOTIFY_HOST__"))
+        let np = try JSONDecoder().decode(NowPlaying.self, from: Data(#"{"title":"t","playing":true,"position":1,"duration":2,"site":"spotify"}"#.utf8))
+        #expect(np.siteName == "Spotify")
+        // 라디오(URL track)는 길이·위치가 missing value → 0.
+        #expect(MediaScript.musicProbe.contains("if d is missing value then set d to 0"))
+    }
+
     @Test func artworkURLIsResizedAndErrorsAreClassified() {
         let js = MediaScript.probeJSOneLine
         // YouTube Music은 544px 원본 하나뿐이라 크기 파라미터를 바꿔 받는다(2026-08-29: 101KB → 상한 초과로 아트워크가 영영 비었음).

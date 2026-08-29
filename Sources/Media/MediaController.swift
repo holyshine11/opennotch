@@ -23,7 +23,22 @@ enum AppleScriptRunner {
         func claim() -> Bool { lock.lock(); defer { lock.unlock() }; if fired { return false }; fired = true; return true }
     }
 
+    /// 결과의 문자열·바이트를 모두 담는다 — NSAppleEventDescriptor는 Sendable이 아니라 큐 안에서 뽑아 둔다.
+    private struct Output: Sendable {
+        let string: String
+        let data: Data
+    }
+
     static func run(_ source: String, timeout: TimeInterval, urgent: Bool = false) async -> Result<String, AppleScriptFailure> {
+        await runRaw(source, timeout: timeout, urgent: urgent).map(\.string)
+    }
+
+    /// 이미지 등 바이너리 결과(Apple Music 아트워크).
+    static func runData(_ source: String, timeout: TimeInterval) async -> Result<Data, AppleScriptFailure> {
+        await runRaw(source, timeout: timeout, urgent: false).map(\.data)
+    }
+
+    private static func runRaw(_ source: String, timeout: TimeInterval, urgent: Bool) async -> Result<Output, AppleScriptFailure> {
         await withCheckedContinuation { cont in
             let ticket = Ticket()
             ticket.operation.queuePriority = urgent ? .veryHigh : .normal
@@ -41,7 +56,7 @@ enum AppleScriptRunner {
         }
     }
 
-    private static func execute(_ source: String) -> Result<String, AppleScriptFailure> {
+    private static func execute(_ source: String) -> Result<Output, AppleScriptFailure> {
         var error: NSDictionary?
         guard let script = NSAppleScript(source: source) else {
             return .failure(AppleScriptFailure(code: 0, message: "compile"))
@@ -52,7 +67,7 @@ enum AppleScriptRunner {
                 code: error[NSAppleScript.errorNumber] as? Int ?? 0,
                 message: error[NSAppleScript.errorMessage] as? String ?? ""))
         }
-        return .success(result.stringValue ?? "")
+        return .success(Output(string: result.stringValue ?? "", data: result.data))
     }
 }
 
@@ -87,6 +102,7 @@ final class MediaController {
     /// 디코딩한 아트워크. 문자열이 바뀔 때만 다시 만든다(0.5초 틱마다 base64 디코딩을 반복하지 않게).
     private(set) var artworkImage: NSImage?
     private var artworkKey: String?
+    private var artworkRetryScheduled = false
 
     private struct Candidate {
         let browser: BrowserKind
@@ -122,7 +138,7 @@ final class MediaController {
         }
     }
 
-    /// 패널의 [Use YouTube controls]. 설정에 기록하면 AppDelegate가 `isEnabled`로 되돌려 준다.
+    /// 패널의 [Use music controls]. 설정에 기록하면 AppDelegate가 `isEnabled`로 되돌려 준다.
     /// 자동화 권한 프롬프트는 브라우저별로 첫 probe 때 1회 뜬다.
     func enableWithUserAction(defaults: UserDefaults = .standard) {
         defaults.set(true, forKey: PrefKey.mediaEnabled)
@@ -195,8 +211,9 @@ final class MediaController {
                         logger.notice("probe timed out for \(browser.rawValue, privacy: .public)")
                         browserBackoff[browser] = Date().addingTimeInterval(Constants.mediaBrowserBackoff)
                     default:
-                        logger.error("probe failed: \(f.code) \(f.message, privacy: .public)")
-                        backoffUntil = Date().addingTimeInterval(Constants.mediaErrorBackoff)
+                        // 한 소스의 오류가 다른 소스까지 멈추지 않게 그 소스만 쉰다(2026-08-29: Music 권한 위반이 전체를 30초 막아 화면이 느려졌음).
+                        logger.error("probe failed for \(browser.rawValue, privacy: .public): \(f.code) \(f.message, privacy: .public)")
+                        browserBackoff[browser] = Date().addingTimeInterval(Constants.mediaErrorBackoff)
                     }
                 }
                 let elapsed = Date().timeIntervalSince(started)
@@ -234,8 +251,11 @@ final class MediaController {
     /// 여러 브라우저에 YouTube 탭이 있을 때 다음 브라우저로 표시를 바꾼다.
     func cycleSource() {
         guard candidates.count > 1 else { return }
-        let i = candidates.firstIndex { $0.browser == current?.browser } ?? -1
-        let next = candidates[(i + 1) % candidates.count]
+        // 후보 배열은 폴링마다 현재 소스가 앞으로 오도록 재정렬되므로, 전환 순서는 `BrowserKind` 선언 순서로 고정한다(3개일 때 되돌아가지 않게).
+        let order = BrowserKind.allCases
+        let ordered = candidates.sorted { order.firstIndex(of: $0.browser)! < order.firstIndex(of: $1.browser)! }
+        let i = ordered.firstIndex { $0.browser == current?.browser } ?? -1
+        let next = ordered[(i + 1) % ordered.count]
         pinned = next.browser
         apply(next)
     }
@@ -259,7 +279,12 @@ final class MediaController {
             }
             setArtwork(nil)
         } else if let data = probe.json.data(using: .utf8), var np = try? JSONDecoder().decode(NowPlaying.self, from: data) {
-            setArtwork(np.artwork)
+            if let id = probe.trackID { fetchMusicArtwork(id) } else { setArtwork(np.artwork) }
+            // 브라우저 아트워크는 페이지가 비동기로 받아 다음 probe에 실린다 — 2초를 기다리지 말고 곧 한 번 더 묻는다.
+            if probe.trackID == nil, np.artwork == nil, !artworkRetryScheduled {
+                artworkRetryScheduled = true
+                Task { try? await Task.sleep(for: .seconds(Constants.mediaArtworkRetryDelay)); artworkRetryScheduled = false; poll() }
+            }
             np.artwork = nil
             // probe 뒤 다른 브라우저를 훑는 동안 흐른 시간만큼 앞으로 — 폴링마다 진행 바가 뒤로 튀지 않게.
             if np.playing, np.duration > 0 { np.position = min(np.position + Date().timeIntervalSince(best.at), np.duration) }
@@ -275,6 +300,18 @@ final class MediaController {
         guard artwork != artworkKey else { return }
         artworkKey = artwork
         artworkImage = artwork.flatMap(NowPlaying.decodeArtwork).flatMap(NSImage.init(data:))
+    }
+
+    /// Apple Music: 트랙(persistent ID)이 바뀔 때만 아트워크 바이트를 1회 읽는다. 결과가 올 때 다른 트랙이면 버린다.
+    private func fetchMusicArtwork(_ id: String) {
+        guard id != artworkKey else { return }
+        artworkKey = id
+        artworkImage = nil
+        Task {
+            let result = await AppleScriptRunner.runData(MediaScript.musicArtwork, timeout: Constants.mediaScriptTimeout)
+            guard artworkKey == id, case .success(let data) = result, !data.isEmpty else { return }
+            artworkImage = NSImage(data: data)
+        }
     }
 
     private func disable() {
