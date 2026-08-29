@@ -13,7 +13,7 @@ App Store Connect에 붙여 넣을 텍스트와 체크리스트. 스펙 §4.10 �
 | 가격 | 무료 |
 | 최소 macOS | 14.0 |
 | 지원 URL | https://github.com/holyshine11/OpenNotch |
-| 개인정보 처리방침 URL | https://holyshine11.github.io/OpenNotch/privacy (GitHub Pages — 아래 5절) |
+| 개인정보 처리방침 URL | https://holyshine11.github.io/opennotch/privacy (GitHub Pages — 아래 5절) |
 | 저작권 | © 2026 holyshine11. MIT License. |
 
 키워드(ko, 100자 이내): `노치,AirDrop,클립보드,유튜브,YouTube Music,셸프,파일,드롭,메뉴바,맥북`
@@ -70,25 +70,34 @@ Used to show the current Apple Music track (name, artist, duration, position, ar
 1. GitHub 저장소 → Settings → Pages → Source: *Deploy from a branch*, Branch: `main`, Folder: `/docs` 선택.
 2. `docs/privacy.md`가 `PRIVACY.md` 내용을 가리키도록 복사(이미 저장소 루트에 `PRIVACY.md` 있음) — 아래 명령:
    `cp PRIVACY.md docs/privacy.md && git add docs/privacy.md`
-3. 몇 분 뒤 https://holyshine11.github.io/OpenNotch/privacy 가 열리는지 확인.
+3. 몇 분 뒤 https://holyshine11.github.io/opennotch/privacy 가 열리는지 확인.
 
 ## 6. 연령 등급 설문
 모든 항목 "없음" → 4+. (폭력·성·도박·의료·무제한 웹 접근·사용자 생성 콘텐츠 모두 없음. 브라우저 탭 제목을 읽지만 웹 콘텐츠를 표시하지 않음.)
 
-## 7. 스크린샷 (2880×1800, 4장)
-1. 펼친 패널 — YouTube Music 재생 중 + 셸프에 파일 3개 + 클립보드 칩
-2. 파일을 끌어오는 순간의 AirDrop / 셸프 드롭 영역
-3. 클립보드 전체 목록 + 검색
-4. 노치 없는 화면의 가상 노치(접힌 상태와 펼친 상태를 한 장에)
+## 7. 스크린샷 (2880×1800)
+`docs/appstore/screenshots/` — 2026-08-29 실기 캡처를 2880×1800 캔버스에 합성(App Store Connect macOS 규격).
 
-촬영: 시스템 설정 › 디스플레이에서 2880×1800(또는 "더 많은 공간")으로 바꾸고 `screencapture -x -R x,y,w,h out.png`. 배경화면은 단색 어두운 색 권장.
+| 파일 | 내용 |
+|---|---|
+| `01-media-panel.png` | 노치 패널 — Apple Music 재생 정보·제어 |
+| `02-welcome-setup.png` | 첫 실행 환영 창 — 사용법 3줄 + 브라우저 4개 모두 "제어 가능" |
+| `03-settings.png` | 설정 창(일반) |
 
-## 8. 제출 전 체크리스트
-- [ ] Release 아카이브: `xcodebuild archive -project OpenNotch.xcodeproj -scheme OpenNotch -configuration Release -archivePath build/OpenNotch.xcarchive`
-- [ ] `scripts/review-check.sh <OpenNotch.app>` → entitlements 6개(scripting-targets 포함), 사설 심볼 없음
-- [ ] App Store Connect에 앱 생성(번들 ID·이름), 위 텍스트 ko/en 입력
-- [ ] PrivacyInfo.xcprivacy: 수집 없음, UserDefaults CA92.1 (이미 포함)
-- [ ] 개인정보 URL 200 응답 확인
-- [ ] 스크린샷 4장 업로드
-- [ ] Entitlement Usage Information + Review Notes 붙여 넣기
-- [ ] 심사 제출
+필요하면 셸프(파일 드롭)·클립보드 탭을 같은 방식으로 추가(실제 파일·클립보드 내용이 찍히므로 개인 정보 없는 상태에서 촬영).
+
+## 8. 제출 전 체크리스트 (2026-08-29 상태)
+- [x] Release 아카이브 + App Store 배포 서명 내보내기: `build/export/OpenNotch.pkg` (1.0.0 (1), Apple Distribution, Mac Team Store 프로파일 포함)
+- [x] `scripts/review-check.sh` → entitlements 확인(브라우저 6 + System Events), 사설 심볼 없음, Info.plist 필수 키 OK
+- [x] 개인정보 URL 200 응답: https://holyshine11.github.io/opennotch/privacy (GitHub Pages, main:/docs — **경로는 소문자**)
+- [x] 스크린샷 3장(`docs/appstore/screenshots/`)
+- [x] PrivacyInfo.xcprivacy: 수집 없음
+- [ ] **App Store Connect에 앱 생성** — 사용자 계정으로 https://appstoreconnect.apple.com › 나의 앱 › + › 신규 앱: 플랫폼 macOS, 이름 `OpenNotch`, 기본 언어 한국어, 번들 ID `com.holyshine11.opennotch`(Xcode 자동 서명으로 이미 등록됨), SKU `opennotch-mac`
+- [ ] **빌드 업로드** — 앱 레코드를 만든 뒤 터미널에서 (Xcode 계정 세션 사용):
+  `xcodebuild -exportArchive -archivePath build/OpenNotch.xcarchive -exportOptionsPlist <UploadOptions.plist> -exportPath build/upload -allowProvisioningUpdates`
+  (`UploadOptions.plist` = method `app-store-connect`, destination `upload`, teamID `MWC6DSJWJR`, signingStyle `automatic`. 또는 Transporter 앱에 `build/export/OpenNotch.pkg`를 끌어다 놓기)
+- [ ] 1절 기본 정보·2절 설명(ko/en)·키워드 입력, 카테고리 유틸리티, 가격 무료
+- [ ] 앱 개인정보(Data Not Collected), 연령 등급(6절), 저작권
+- [ ] 3절 Entitlement Usage Information + 4절 Review Notes를 "심사 정보 › 메모"에 붙여 넣기
+- [ ] 스크린샷 업로드 → 빌드 선택 → 심사 제출
+- 반려 대비: `com.apple.systemevents` 예외가 문제면 SetupAssistant 관련 커밋(6622dec 이후)을 되돌리고 entitlements에서 그 한 줄을 지운 뒤 재제출 — 환영 창의 수동 안내는 그대로 남는다.

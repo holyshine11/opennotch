@@ -42,7 +42,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSAppleEventsUsageDescription: "OpenNotch reads the title and playback state of your open YouTube/Spotify tabs and of Apple Music, and sends play/pause/next/previous. During setup, at your request, it asks System Events to open the browser's Developer menu for you."
         ONGitHubURL: "https://github.com/holyshine11/OpenNotch"
-        ONPrivacyURL: "https://holyshine11.github.io/OpenNotch/privacy"
+        ONPrivacyURL: "https://holyshine11.github.io/opennotch/privacy"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.holyshine11.opennotch
