@@ -53,6 +53,15 @@ enum Constants {
     }()
     static let youtubeWatchPath: String = "youtube.com/watch"
     static let spotifyWebHost: String = "open.spotify.com"
+    /// 손쉬운 사용 도우미(SetupAssistant): AX 응답 대기 상한과, 메뉴·창이 그려질 때까지 기다리는 시간.
+    static let assistMessagingTimeout: Float = 2
+    static let assistActivateDelay: TimeInterval = 0.4
+    static let assistMenuOpenDelay: TimeInterval = 0.3
+    static let assistSettleDelay: TimeInterval = 0.6
+    static let assistPermissionPollInterval: TimeInterval = 1
+    static let assistMenuPollInterval: TimeInterval = 0.5   // 펼쳐 둔 메뉴가 닫혔는지 확인하는 주기
+    static let assistSearchDepth: Int = 8   // Safari 설정 창에서 체크박스를 찾을 때 내려갈 최대 깊이
     static let automationPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
+    static let accessibilityPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
     static let pasteboardPrivacySettingsURL: String = "x-apple.systempreferences:com.apple.preference.security?Privacy_Pasteboard"
 }

@@ -245,6 +245,14 @@ final class MediaController {
         }
     }
 
+    /// 백오프를 무시하고 이 브라우저를 바로 다시 묻는다 — 도우미가 메뉴를 펼쳐 둔 동안 크로미움은 Apple Event에 답하지 않아
+    /// probe가 타임아웃되고 15초 쉬는데, 사용자가 항목을 누른 뒤 몇 초 안에 초록 체크가 되어야 하므로 안내 창이 주기적으로 부른다.
+    func retryNow(_ browser: BrowserKind) {
+        browserBackoff[browser] = nil
+        backoffUntil = .distantPast
+        poll()
+    }
+
     /// 안내 창이 브라우저마다 "지금 할 일 하나"를 고르는 기준.
     func setupStatus(_ browser: BrowserKind) -> BrowserSetupStatus {
         .derive(jsReady: jsReady[browser], denied: deniedBrowsers.contains(browser), running: browser.isRunning)

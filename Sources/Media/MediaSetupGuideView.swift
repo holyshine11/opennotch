@@ -7,6 +7,11 @@ extension Notification.Name {
     static let openNotchShowMediaSetup = Notification.Name("com.holyshine11.opennotch.showMediaSetup")
 }
 
+/// "메뉴 열어 주기"를 누른 뒤 카드가 지나가는 단계. 뷰 안에서만 쓴다.
+private enum AssistPhase: Equatable {
+    case consent, waitingForPermission, running, clickTheItem, done, failed
+}
+
 /// 처음 쓰는 사람을 위한 한 화면 안내. 브라우저마다 지금 상태와 다음에 할 일 하나(탭 열기 / 메뉴 켜기 / 권한 열기)를 같이 보여 주고,
 /// 창이 열려 있는 동안 계속 probe해서 사용자가 토글을 켜는 즉시 체크가 바뀐다. 높이는 내용에 맞춘다(설치된 브라우저 수만큼).
 struct MediaSetupGuideView: View {
@@ -14,8 +19,14 @@ struct MediaSetupGuideView: View {
     /// 첫 실행에서만 환영 인사를 붙인다.
     var showWelcome = false
 
+    /// 손쉬운 사용 도우미의 브라우저별 진행 단계. 값이 없으면 평소처럼 메뉴 경로 칩을 보여 준다.
+    @State private var assist: [BrowserKind: AssistPhase] = [:]
+
     private var browsers: [BrowserKind] { BrowserKind.browsers.filter(\.isInstalled) }
     private var allReady: Bool { !browsers.isEmpty && browsers.allSatisfy { controller.setupStatus($0) == .ready } }
+    private var readyBrowsers: [BrowserKind] { browsers.filter { controller.setupStatus($0) == .ready } }
+    private var waitingBrowsers: [BrowserKind] { browsers.filter { assist[$0] == .waitingForPermission } }
+    private var clickingBrowsers: [BrowserKind] { browsers.filter { assist[$0] == .clickTheItem } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -32,6 +43,15 @@ struct MediaSetupGuideView: View {
         .frame(width: Constants.mediaSetupWindowWidth)
         .onAppear { controller.setPanelOpen(true) }
         .onDisappear { controller.setPanelOpen(false) }
+        // 권한을 켜는 즉시 이어서 진행한다. 창을 닫으면 `.task`가 취소된다.
+        .task(id: waitingBrowsers) { await awaitPermission() }
+        .task(id: clickingBrowsers) { await pollWhileMenuOpen() }
+        .onChange(of: readyBrowsers) { _, now in
+            // 사용자가 메뉴에서 마지막 항목을 눌러 켜진 경우 브라우저가 앞에 있다 — 안내 창을 다시 앞으로 가져온다.
+            let finishedByAssistant = now.contains { assist[$0] != nil }
+            for browser in now { assist[browser] = nil }
+            if finishedByAssistant { bringGuideWindowFront() }
+        }
     }
 
     private var welcome: some View {
@@ -95,6 +115,8 @@ struct MediaSetupGuideView: View {
             if status == .permissionDenied {
                 Text("Turn on \(browser.displayName) under OpenNotch in Privacy & Security › Automation, then come back.")
                     .font(.callout)
+            } else if status == .jsOff, let phase = assist[browser] {
+                assistBody(browser, phase)
             } else {
                 menuPath(browser, ready: status == .ready)
                 if browser.isSafari {
@@ -112,6 +134,16 @@ struct MediaSetupGuideView: View {
         case .ready:
             EmptyView()
         case .jsOff:
+            // 삼항 연산자를 인자에 바로 쓰면 문자열 리터럴이 `String`으로 추론돼 번역이 빠진다 — 타입을 명시한다.
+            let title: LocalizedStringKey = browser.isSafari ? "Turn it on for me" : "Open the menu for me"
+            Button(title) {
+                if SetupAssistant.isTrusted {
+                    Task { await run(browser) }
+                } else {
+                    assist[browser] = .consent
+                }
+            }
+            .buttonStyle(.borderedProminent)
             Button("Show \(browser.displayName)") { browser.activate() }
         case .permissionDenied:
             Button("Open System Settings") {
@@ -121,6 +153,108 @@ struct MediaSetupGuideView: View {
             Button("Open YouTube in \(browser.displayName)") { browser.openCheckPage() }
                 .buttonStyle(.borderedProminent)
         }
+    }
+
+    // MARK: 손쉬운 사용 도우미
+
+    /// `.jsOff` 카드에서 칩 줄을 대신하는 진행 안내. `.clickTheItem`·`.failed`에서는 칩 줄도 같이 보여 준다.
+    @ViewBuilder private func assistBody(_ browser: BrowserKind, _ phase: AssistPhase) -> some View {
+        switch phase {
+        case .consent:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("OpenNotch needs the macOS Accessibility permission to open \(browser.displayName)’s menu for you.")
+                    .font(.callout)
+                Text("It is used only to open this menu — nothing on your screen is read or recorded, and you can turn it off any time in System Settings.")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Button("Allow…") {
+                        SetupAssistant.requestPermission()
+                        assist[browser] = .waitingForPermission
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Button("I’ll do it myself") { assist[browser] = nil }.buttonStyle(.link)
+                }
+            }
+        case .waitingForPermission:
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Turn on OpenNotch in System Settings › Privacy & Security › Accessibility — this continues by itself.")
+                        .font(.callout)
+                }
+                Button("Open System Settings") {
+                    if let url = URL(string: Constants.accessibilityPrivacySettingsURL) { NSWorkspace.shared.open(url) }
+                }
+                .buttonStyle(.link)
+            }
+        case .running:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Opening \(browser.displayName)’s menu…").font(.callout)
+            }
+        case .clickTheItem:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Click “\(browser.menuPath.last ?? "")” in the menu that just opened — the check turns green by itself.")
+                    .font(.callout.weight(.semibold))
+                menuPath(browser, ready: false)
+            }
+        case .done:
+            Text("Done — checking…").font(.callout).foregroundStyle(.secondary)
+        case .failed:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Couldn’t find the menu item — please open it yourself:").font(.callout)
+                menuPath(browser, ready: false)
+            }
+        }
+    }
+
+    /// 도우미를 한 번 돌리고 결과를 단계로 옮긴다. 바로 probe해서 체크가 1초 안에 초록이 되게 한다.
+    @MainActor private func run(_ browser: BrowserKind) async {
+        assist[browser] = .running
+        switch await SetupAssistant.revealJSToggle(in: browser) {
+        case .alreadyOn, .turnedOn:
+            assist[browser] = .done
+            bringGuideWindowFront()
+        case .menuLeftOpen:
+            assist[browser] = .clickTheItem   // 열린 메뉴에는 지금 물어도 답이 없다 — pollWhileMenuOpen이 맡는다
+            return
+        case .notFound: assist[browser] = .failed
+        case .noPermission: assist[browser] = .consent
+        }
+        controller.poll()
+    }
+
+    /// 메뉴를 펼쳐 둔 동안 크로미움은 Apple Event에 답하지 않으므로 묻지 않고 기다리다가, 메뉴가 닫히는 순간(사용자가 항목을 누름)
+    /// 백오프를 무시하고 바로 묻는다 → 몇 초 안에 초록 체크. 닫혔는데도 안 켜졌으면(다른 곳을 클릭) 버튼을 다시 보여 준다.
+    @MainActor private func pollWhileMenuOpen() async {
+        for browser in clickingBrowsers {
+            while !Task.isCancelled, assist[browser] == .clickTheItem, await SetupAssistant.isMenuOpen(in: browser) {
+                try? await Task.sleep(for: .seconds(Constants.assistMenuPollInterval))
+            }
+            guard !Task.isCancelled, assist[browser] == .clickTheItem else { continue }
+            controller.retryNow(browser)
+            try? await Task.sleep(for: .seconds(Constants.mediaScriptTimeout + Constants.assistSettleDelay))
+            if !Task.isCancelled, assist[browser] == .clickTheItem { assist[browser] = nil }
+        }
+    }
+
+    /// 권한 프롬프트에는 콜백이 없어 1초마다 직접 확인한다. 켜지는 즉시 이어서 진행한다.
+    @MainActor private func awaitPermission() async {
+        guard !waitingBrowsers.isEmpty else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(Constants.assistPermissionPollInterval))
+            guard !Task.isCancelled else { return }
+            guard SetupAssistant.isTrusted else { continue }
+            for browser in waitingBrowsers { await run(browser) }
+            return
+        }
+    }
+
+    /// 브라우저가 앞으로 나간 뒤 안내 창을 다시 보여 준다(AppDelegate가 이 뷰를 `ScrollView`로 감싸 띄운다).
+    private func bringGuideWindowFront() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.windows.first { $0.contentViewController is NSHostingController<ScrollView<MediaSetupGuideView>> }?
+            .makeKeyAndOrderFront(nil)
     }
 
     /// 클릭 경로를 메뉴 조각으로 그린다: [보기] › [개발자 정보] › [☐ Apple Events의 자바스크립트 허용]. 마지막 조각이 켤 항목.

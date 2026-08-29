@@ -137,6 +137,16 @@
         }
       }
     },
+    "Allow…": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용하기…"
+          }
+        }
+      }
+    },
     "App": {
       "localizations": {
         "ko": {
@@ -227,6 +237,16 @@
         }
       }
     },
+    "Click “%@” in the menu that just opened — the check turns green by itself.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "방금 열린 메뉴에서 “%@”을(를) 클릭하세요 — 체크가 저절로 초록색이 됩니다."
+          }
+        }
+      }
+    },
     "Clipboard": {
       "localizations": {
         "ko": {
@@ -273,6 +293,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "로그인 항목을 변경할 수 없습니다"
+          }
+        }
+      }
+    },
+    "Couldn’t find the menu item — please open it yourself:": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메뉴 항목을 찾지 못했습니다 — 아래 경로를 직접 열어 주세요:"
           }
         }
       }
@@ -335,6 +365,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "완료"
+          }
+        }
+      }
+    },
+    "Done — checking…": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완료 — 확인 중…"
           }
         }
       }
@@ -455,6 +495,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "새로 생긴 “개발자” 탭에서 “Apple 이벤트에서 JavaScript 허용”에 체크"
+          }
+        }
+      }
+    },
+    "It is used only to open this menu — nothing on your screen is read or recorded, and you can turn it off any time in System Settings.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 메뉴를 여는 데만 사용합니다 — 화면이나 입력을 읽거나 기록하지 않으며, 시스템 설정에서 언제든 끌 수 있습니다."
+          }
+        }
+      }
+    },
+    "I’ll do it myself": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "직접 할게요"
           }
         }
       }
@@ -659,12 +719,42 @@
         }
       }
     },
+    "Open the menu for me": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메뉴 열어 주기"
+          }
+        }
+      }
+    },
     "OpenNotch": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
             "value": "OpenNotch"
+          }
+        }
+      }
+    },
+    "OpenNotch needs the macOS Accessibility permission to open %@’s menu for you.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenNotch가 %@의 메뉴를 대신 열려면 macOS ‘손쉬운 사용’ 권한이 필요합니다."
+          }
+        }
+      }
+    },
+    "Opening %@’s menu…": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 메뉴를 여는 중…"
           }
         }
       }
@@ -939,12 +1029,32 @@
         }
       }
     },
+    "Turn it on for me": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대신 켜 주기"
+          }
+        }
+      }
+    },
     "Turn on %@ under OpenNotch in Privacy & Security › Automation, then come back.": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
             "value": "개인정보 보호 및 보안 › 자동화에서 OpenNotch 아래 %@을(를) 켠 뒤 돌아오세요."
+          }
+        }
+      }
+    },
+    "Turn on OpenNotch in System Settings › Privacy & Security › Accessibility — this continues by itself.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 OpenNotch를 켜세요 — 켜는 즉시 이어서 진행됩니다."
           }
         }
       }
