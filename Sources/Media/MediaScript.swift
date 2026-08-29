@@ -82,6 +82,7 @@ enum MediaScript {
         title: (md && md.title) || document.title,
         artist: (md && md.artist) || null,
         artwork: (cache && art && cache.src === art.src) ? cache.data : null,
+        artPending: !!(art && window.__onArtBusy),
         playing: playing,
         position: position,
         duration: duration,
@@ -310,6 +311,8 @@ struct NowPlaying: Codable, Equatable, Sendable {
     var artist: String?
     /// `data:image/…;base64,…` 또는 nil.
     var artwork: String?
+    /// 페이지가 아트워크를 아직 받는 중(다음 probe에 실린다) — true면 곧 한 번 더 묻는다.
+    var artPending: Bool?
     var playing: Bool
     var position: Double
     var duration: Double

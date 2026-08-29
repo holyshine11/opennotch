@@ -281,7 +281,7 @@ final class MediaController {
         } else if let data = probe.json.data(using: .utf8), var np = try? JSONDecoder().decode(NowPlaying.self, from: data) {
             if let id = probe.trackID { fetchMusicArtwork(id) } else { setArtwork(np.artwork) }
             // 브라우저 아트워크는 페이지가 비동기로 받아 다음 probe에 실린다 — 2초를 기다리지 말고 곧 한 번 더 묻는다.
-            if probe.trackID == nil, np.artwork == nil, !artworkRetryScheduled {
+            if np.artPending == true, !artworkRetryScheduled {
                 artworkRetryScheduled = true
                 Task { try? await Task.sleep(for: .seconds(Constants.mediaArtworkRetryDelay)); artworkRetryScheduled = false; poll() }
             }

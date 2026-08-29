@@ -84,7 +84,7 @@ import Testing
         #expect(probe.contains(#"u contains "open.spotify.com""#))
         let js = MediaScript.probeJSOneLine
         #expect(js.contains("location.host === 'open.spotify.com'") && !js.contains("__SPOTIFY_HOST__"))
-        #expect(js.contains("playback-progressbar") && js.contains("' • '") && js.contains("'spotify'"))
+        #expect(js.contains("playback-progressbar") && js.contains("' • '") && js.contains("'spotify'") && js.contains("artPending"))
         let cmd = MediaScript.command(browser: .chrome, window: 1, tab: 1, .seek(0.5))
         #expect(cmd.contains("control-button-playpause") && cmd.contains("HTMLInputElement.prototype") && !cmd.contains("__SPOTIFY_HOST__"))
         let np = try JSONDecoder().decode(NowPlaying.self, from: Data(#"{"title":"t","playing":true,"position":1,"duration":2,"site":"spotify"}"#.utf8))
