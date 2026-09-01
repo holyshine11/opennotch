@@ -26,7 +26,6 @@
 		<string>company.thebrowser.Browser</string>
 		<string>com.brave.Browser</string>
 		<string>com.naver.Whale</string>
-		<string>com.apple.systemevents</string>
 	</array>
 </dict>
 </plist>

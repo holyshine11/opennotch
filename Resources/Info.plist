@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>2</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>
@@ -29,7 +29,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>OpenNotch reads the title and playback state of your open YouTube/Spotify tabs and of Apple Music, and sends play/pause/next/previous. During setup, at your request, it asks System Events to open the browser's Developer menu for you.</string>
+	<string>OpenNotch reads the title and playback state of your open YouTube/Spotify tabs and of Apple Music, and sends play/pause/next/previous.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 holyshine11. MIT License.</string>
 	<key>ONGitHubURL</key>

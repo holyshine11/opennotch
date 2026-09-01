@@ -16,20 +16,6 @@ enum BrowserSetupStatus: Equatable, Sendable {
     }
 }
 
-/// 손쉬운 사용 도우미가 메뉴·체크박스를 찾을 때 쓰는 이름 후보. 브라우저 UI의 실제 라벨이라(앱 언어가 아니라 브라우저 언어를 따른다)
-/// 번역 카탈로그가 아니라 여기에 둔다. 못 찾으면 도우미는 아무것도 누르지 않고 수동 경로 안내로 되돌아간다.
-enum MenuTitles {
-    static let view: [String] = ["View", "보기"]
-    static let developer: [String] = ["Developer", "개발자 정보", "개발자"]
-    static let allowJS: [String] = ["Allow JavaScript from Apple Events", "Apple Events의 자바스크립트 허용", "Apple 이벤트에서 JavaScript 허용"]
-    static let safariDeveloperTab: [String] = ["Developer", "개발자"]
-    static let safariAdvancedTab: [String] = ["Advanced", "고급"]
-    static let safariShowDevFeatures: [String] = ["Show features for web developers", "웹 개발자를 위한 기능 보기"]
-    static let allowJSSafari: [String] = ["Allow JavaScript from Apple Events", "Apple 이벤트에서 JavaScript 허용"]
-    /// 이름으로 못 찾았을 때의 보기 메뉴 위치(0부터: Apple, 앱, 파일, 편집, 보기).
-    static let viewMenuIndex: Int = 4
-}
-
 /// 미디어 소스. rawValue = 번들 ID. 브라우저(`isBrowser`)는 `OpenNotch.entitlements`의 temporary-exception 목록과,
 /// Apple Music은 `scripting-targets` 키와 정확히 같아야 한다(EntitlementsTests).
 /// 순수 데이터라 `#if MEDIA_ENABLED` 밖에 둔다(테스트 타깃에서도 컴파일).

@@ -6,8 +6,8 @@ App Store Connect에 붙여 넣을 텍스트와 체크리스트. 스펙 §4.10 �
 | 항목 | 값 |
 |---|---|
 | 이름 | OpenNotch |
-| 부제(ko) | 무료 노치 패널 — AirDrop·클립보드·음악 |
-| 부제(en) | Free notch panel with music |
+| 부제(ko) | 노치 패널 — 셸프·클립보드·음악 |
+| 부제(en) | Notch shelf, clipboard & music |
 | 번들 ID | com.holyshine11.opennotch |
 | 카테고리 | 유틸리티 (public.app-category.utilities) |
 | 가격 | 무료 |
@@ -16,9 +16,9 @@ App Store Connect에 붙여 넣을 텍스트와 체크리스트. 스펙 §4.10 �
 | 개인정보 처리방침 URL | https://holyshine11.github.io/opennotch/privacy (GitHub Pages — 아래 5절) |
 | 저작권 | © 2026 holyshine11. MIT License. |
 
-키워드(ko, 100자 이내): `무료,노치,AirDrop,클립보드,유튜브,YouTube Music,셸프,파일,드롭,메뉴바,맥북`
-키워드(en): `free,notch,airdrop,clipboard,youtube,youtube music,shelf,file drop,menu bar,macbook`
-※ 부제·키워드에 "Dynamic Island" 사용 금지.
+키워드(ko, 100자 이내): `노치,클립보드,유튜브,YouTube Music,셸프,파일,드롭,메뉴바,맥북,음악`
+키워드(en): `notch,clipboard,youtube,youtube music,shelf,file drop,menu bar,macbook,music,share`
+※ 부제·키워드에 "Dynamic Island"·"AirDrop"(Apple 상표, 5.2.5)·"무료/free"(가격 언급, 2.3.7) 사용 금지 — 2026-09-01 리젝 사유. 설명 본문에서는 둘 다 허용(Apple이 가격 언급은 설명에 쓰라고 명시).
 
 ## 2. 설명
 
@@ -54,11 +54,11 @@ No network, no analytics, no accounts. Everything stays on this Mac. Free and op
 프로모션 텍스트(en): `Really free — no in-app purchases, no subscription, no locked features. Music controls included. AirDrop, file shelf, clipboard history and music in one notch panel.`
 
 ## 3. Entitlement Usage Information (심사용, en)
-**com.apple.security.temporary-exception.apple-events** — targets: `com.apple.Safari`, `com.google.Chrome`, `com.microsoft.edgemac`, `company.thebrowser.Browser`, `com.brave.Browser`, `com.naver.Whale`, `com.apple.systemevents`.
+**com.apple.security.temporary-exception.apple-events** — targets: `com.apple.Safari`, `com.google.Chrome`, `com.microsoft.edgemac`, `company.thebrowser.Browser`, `com.brave.Browser`, `com.naver.Whale`.
 
 OpenNotch's media feature shows what is playing in the user's browser and offers play/pause/next/previous/seek. macOS provides no public API for "Now Playing" information, so the app asks the browser through Apple Events for the URL and title of open tabs and, in tabs on youtube.com / music.youtube.com / open.spotify.com only, runs a small read-only script to get the title, artist, artwork and playback state. Commands are limited to play, pause, next, previous and seek on that tab. The first Apple Event is sent only after the user answers the system automation prompt. No Apple Events are sent while the panel is collapsed, and the app opens a browser only when the user presses "Open YouTube in …" in the setup window. No Finder target. No data leaves the Mac.
 
-`com.apple.systemevents` is used for exactly one optional convenience in the setup window: when the user presses “Open the menu for me” next to a browser, the app asks System Events (UI scripting) to open that browser's View › Developer menu so the user can click the browser's own switch “Allow JavaScript from Apple Events” (for Safari it opens Safari Settings with ⌘, — turning on “Show features for web developers” in the Advanced tab first if needed — and ticks the same checkbox in the Developer tab, then closes that Settings window). If the menu item cannot be found by name, nothing is clicked — the submenu is simply left open for the user. This requires the user to grant Accessibility to OpenNotch in System Settings; the window explains why and how, and the whole feature is skipped without it. Nothing on screen is read or recorded, no other app or window is touched, and the manual menu path is always shown as the alternative.
+(2026-09-01: `com.apple.systemevents` 예외는 심사 2.4.5(i)에서 거부되어 빌드 (2)에서 엔타이틀먼트와 SetupAssistant 기능을 함께 제거 — 안내 창의 수동 경로 안내만 남김.)
 
 **com.apple.security.scripting-targets** — `com.apple.Music`: `com.apple.Music.playback`, `com.apple.Music.library.read`.
 
@@ -67,7 +67,6 @@ Used to show the current Apple Music track (name, artist, duration, position, ar
 ## 4. Review Notes (심사 노트, en)
 - **Where the app lives:** OpenNotch is a menu-bar/notch utility (LSUIElement). On a MacBook with a notch, click the notch. On other Macs a black virtual notch is drawn at the top center of the menu bar — click it, or press ⌃⌥N, or launch the app again to open the panel.
 - **Music controls:** on first launch a "Welcome to OpenNotch" window opens with a live setup checklist; it can be reopened anytime from the menu bar icon › "Music controls setup…" (or the ⚙︎ button in the panel). Each installed browser has a row showing its current status, an "Open YouTube in …" button that opens music.youtube.com in that browser, and the exact menu path for the browser's own switch "Allow JavaScript from Apple Events" (Chrome-family: View › Developer; Safari: Settings › Advanced, then the Developer tab); the row turns green by itself once the switch is on. Without that switch the app shows only the tab title (read-only mode) — this is expected behaviour, not a bug. Apple Music needs no browser switch.
-- **Accessibility (optional):** the setup window offers “Open the menu for me”. If the user grants Accessibility (System Settings › Privacy & Security › Accessibility › + — macOS shows no prompt for sandboxed apps, so the window guides this manually), the app asks System Events to open the browser's View › Developer menu (Chrome family) or to tick Safari's ‘Allow JavaScript from Apple Events’ checkbox in Safari Settings › Developer. Chrome-family browsers ignore synthetic clicks on that menu item, so the user clicks the final item themselves. Nothing on screen is read or recorded; the feature is fully optional and the manual path is always shown. To test: open the setup window, press “Open YouTube in Chrome”, then “Open the menu for me”.
 - **Clipboard:** on macOS 15.4+ the first read triggers the system pasteboard prompt; if denied, the panel shows a button to System Settings › Privacy & Security › Pasteboard.
 - **AirDrop:** drag any file onto the notch and drop it on the "AirDrop" zone. Requires Wi‑Fi and Bluetooth.
 - **Quit:** menu bar icon › Quit OpenNotch, or ⚙︎ in the panel › Quit.
@@ -107,4 +106,17 @@ Used to show the current Apple Music track (name, artist, duration, position, ar
 - [x] 앱 개인정보(데이터 수집 안 함, 게시됨), 연령 등급 4+, 저작권
 - [x] 심사 정보: 연락처 + 영어 메모(3,752자 — 앱 위치·60초 테스트·읽기 전용 설명·엔타이틀먼트 5개 용도·개인정보)
 - [x] 스크린샷 3장 업로드 → 빌드 선택 → **심사 제출 완료: 2026-08-29, 상태 "1.0.0 심사 대기 중(Waiting for Review)"** — 같은 날 '정말 무료' 문구(부제·프로모션·설명·키워드 ko/en)와 영어 UI 스크린샷 3장을 넣기 위해 심사에서 한 번 내렸다가 재제출(심사 대기 중에는 스크린샷·설명 자산이 잠김, 프로모션 텍스트만 편집 가능)
-- 반려 대비: `com.apple.systemevents` 예외가 문제면 SetupAssistant 관련 커밋(6622dec 이후)을 되돌리고 entitlements에서 그 한 줄을 지운 뒤 재제출 — 환영 창의 수동 안내는 그대로 남는다.
+- ~~반려 대비: `com.apple.systemevents` 예외가 문제면 SetupAssistant 관련 커밋(6622dec 이후)을 되돌리고 entitlements에서 그 한 줄을 지운 뒤 재제출 — 환영 창의 수동 안내는 그대로 남는다.~~
+
+## 9. 2026-09-01 리젝(1차 심사)과 대응 — 빌드 1.0.0 (2)
+Submission ID `720bc72b-e7d8-45bf-a6e5-8c505bd2b160`, 심사일 2026-09-01. 지적 3건:
+
+| 가이드라인 | 지적 | 대응 |
+|---|---|---|
+| 2.3.7 (가격 언급) | 부제의 "무료/Free" | 부제에서 제거. 설명·프로모션의 '정말 무료' 문구는 유지(Apple이 설명에 쓰라고 안내) |
+| 5.2.5 (Apple 상표) | 부제의 "AirDrop" | 부제·키워드에서 제거. 설명 본문의 기능 소개(참조적 사용)는 유지 |
+| 2.4.5(i) (임시 예외) | `com.apple.systemevents` 승인 불가 확정 | SetupAssistant(System Events UI 스크립팅) 기능·엔타이틀먼트 제거, 수동 안내 유지. 브라우저 6개 예외와 Music scripting-targets는 지적되지 않아 유지 |
+
+- 새 부제(ko): `노치 패널 — 셸프·클립보드·음악` / (en): `Notch shelf, clipboard & music`
+- 새 키워드: 1절 참고(무료/free·AirDrop 제거)
+- 빌드 (2): CFBundleVersion 2, NSAppleEventsUsageDescription에서 System Events 문장 제거

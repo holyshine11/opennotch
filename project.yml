@@ -34,13 +34,13 @@ targets:
       properties:
         CFBundleDisplayName: OpenNotch
         CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: "2"
         LSUIElement: true
         LSMinimumSystemVersion: "14.0"
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: "© 2026 holyshine11. MIT License."
         ITSAppUsesNonExemptEncryption: false
-        NSAppleEventsUsageDescription: "OpenNotch reads the title and playback state of your open YouTube/Spotify tabs and of Apple Music, and sends play/pause/next/previous. During setup, at your request, it asks System Events to open the browser's Developer menu for you."
+        NSAppleEventsUsageDescription: "OpenNotch reads the title and playback state of your open YouTube/Spotify tabs and of Apple Music, and sends play/pause/next/previous."
         ONGitHubURL: "https://github.com/holyshine11/OpenNotch"
         ONPrivacyURL: "https://holyshine11.github.io/opennotch/privacy"
     settings:
