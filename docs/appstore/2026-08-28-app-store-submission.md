@@ -120,3 +120,5 @@ Submission ID `720bc72b-e7d8-45bf-a6e5-8c505bd2b160`, 심사일 2026-09-01. 지�
 - 새 부제(ko): `노치 패널 — 셸프·클립보드·음악` / (en): `Notch shelf, clipboard & music`
 - 새 키워드: 1절 참고(무료/free·AirDrop 제거)
 - 빌드 (2): CFBundleVersion 2, NSAppleEventsUsageDescription에서 System Events 문장 제거
+- 심사 노트(ASC 메모)에서 systemevents 단락 삭제 (3,752자 → 3,102자)
+- **재제출 완료: 2026-09-01 오후 12:35, 같은 Submission ID(720bc72b…)에 빌드 (2) 교체 후 "앱 심사에 다시 제출" — 상태 "심사 대기 중"**
